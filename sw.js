@@ -1,6 +1,6 @@
 // Service worker : permet d'installer l'app et de l'ouvrir sans internet.
 // Change CACHE_VERSION à chaque mise à jour de index.html pour forcer le rafraîchissement.
-const CACHE_VERSION = 'copilote-v15-2';
+const CACHE_VERSION = 'copilote-v15-3';
 const CORE = [
   './',
   './index.html',
@@ -14,7 +14,7 @@ const CORE = [
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_VERSION)
-      .then(cache => Promise.all(CORE.map(url => cache.add(url).catch(() => {}))))
+      .then(cache => Promise.all(CORE.map(url => cache.add(new Request(url, { cache: 'reload' })).catch(() => {}))))
       .then(() => self.skipWaiting())
   );
 });
@@ -34,7 +34,8 @@ self.addEventListener('fetch', event => {
   // La page elle-même : d'abord le réseau (pour recevoir les mises à jour), sinon la copie hors ligne
   if (req.mode === 'navigate') {
     event.respondWith(
-      fetch(req)
+      // 'no-cache' : toujours vérifier auprès du serveur, sinon le navigateur ressert une ancienne version
+      fetch(req, { cache: 'no-cache' })
         .then(res => {
           const copy = res.clone();
           caches.open(CACHE_VERSION).then(c => c.put('./index.html', copy));
