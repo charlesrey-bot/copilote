@@ -810,7 +810,10 @@
   function parseIso(s) { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); }
   function daysBetween(a, b) { return Math.round((parseIso(b) - parseIso(a)) / DAY_MS); }
   function addDays(s, n) { const d = parseIso(s); d.setDate(d.getDate() + n); return toIso(d); }
-  function fmtDate(s) { return parseIso(s).toLocaleDateString('fr-FR'); }
+  function fmtDate(s) {
+    if (typeof s !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(s)) return s ? String(s) : '';
+    return parseIso(s).toLocaleDateString('fr-FR');
+  }
 
   function esc(s) {
     return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -827,9 +830,38 @@
       return false;
     }
   }
-  function getLogs() {
-    try { return JSON.parse(localStorage.getItem('cycleLogs') || "[]"); } catch (e) { return []; }
+  const ISO_RE = /^\d{4}-\d{2}-\d{2}$/;
+  function isoFromAny(v) {
+    if (typeof v === 'number' && isFinite(v)) return toIso(new Date(v));
+    if (typeof v !== 'string') return null;
+    let m = v.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+    m = v.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})/);
+    if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+    return null;
   }
+  // Les notes des anciennes versions de l'app n'ont pas toutes le champ logDateIso : on le reconstruit
+  function normalizeLog(l) {
+    if (!l || typeof l !== 'object') return null;
+    const out = { ...l };
+    if (!ISO_RE.test(out.logDateIso || '')) {
+      out.logDateIso = isoFromAny(out.logDateIso) || isoFromAny(out.date) || isoFromAny(out.logDate) ||
+        isoFromAny(out.dateIso) || isoFromAny(out.displayDate) || isoFromAny(out.timestamp) || isoFromAny(out.id) || null;
+    }
+    if (out.moodVal !== undefined && out.moodVal !== null) out.moodVal = parseInt(out.moodVal) || null;
+    if (out.cycleDay !== undefined && out.cycleDay !== null) out.cycleDay = parseInt(out.cycleDay) || null;
+    if (!Array.isArray(out.symptoms)) out.symptoms = out.symptoms ? [String(out.symptoms)] : [];
+    if (!Array.isArray(out.tags)) out.tags = out.tags ? [String(out.tags)] : [];
+    return out;
+  }
+  function getLogs() {
+    let raw;
+    try { raw = JSON.parse(localStorage.getItem('cycleLogs') || "[]"); } catch (e) { return []; }
+    if (!Array.isArray(raw)) return [];
+    return raw.map(normalizeLog).filter(Boolean);
+  }
+  // Uniquement les notes qui ont une date exploitable (pour les calculs de cycle)
+  function datedLogs(logs) { return (logs || getLogs()).filter(l => l.logDateIso); }
   function setLogs(logs) {
     logs.sort((a, b) => (b.logDateIso || '').localeCompare(a.logDateIso || ''));
     return store('cycleLogs', JSON.stringify(logs));
@@ -1100,7 +1132,7 @@
 
   // Jour du cycle d'une date passée : compté depuis le début de règles le plus proche avant elle.
   function cycleDayForLogDate(date, logs) {
-    const starts = logs.filter(l => l.isPeriodStart).map(l => l.logDateIso);
+    const starts = datedLogs(logs).filter(l => l.isPeriodStart).map(l => l.logDateIso);
     const current = localStorage.getItem('startDate');
     if (current) starts.push(current);
     const before = starts.filter(s => s <= date).sort();
@@ -1121,7 +1153,7 @@
     if (form.isPeriodStart && (!start || date > start)) {
       start = date;
     } else if (!form.isPeriodStart && wasStart && start === date) {
-      const otherStarts = others.filter(l => l.isPeriodStart).map(l => l.logDateIso).sort();
+      const otherStarts = datedLogs(others).filter(l => l.isPeriodStart).map(l => l.logDateIso).sort();
       const manual = localStorage.getItem('startDateManual');
       start = otherStarts.length ? otherStarts[otherStarts.length - 1] : (manual && manual !== date ? manual : null);
     }
@@ -1129,7 +1161,7 @@
     if (form.isPeriodEnd && (!start || date >= start)) {
       end = date;
     } else if (!form.isPeriodEnd && wasEnd && end === date) {
-      const otherEnds = others.filter(l => l.isPeriodEnd && (!start || l.logDateIso >= start)).map(l => l.logDateIso).sort();
+      const otherEnds = datedLogs(others).filter(l => l.isPeriodEnd && (!start || l.logDateIso >= start)).map(l => l.logDateIso).sort();
       end = otherEnds.length ? otherEnds[otherEnds.length - 1] : null;
     }
     if (end && start && end < start) end = null;
@@ -1475,7 +1507,7 @@
   }
 
   function renderLogs() {
-    let logs = getLogs();
+    let logs = getLogs().sort((a, b) => (b.logDateIso || '').localeCompare(a.logDateIso || ''));
     const container = el('historyList');
 
     if (historyFilter === 'crises') {
@@ -1493,10 +1525,10 @@
       return `
       <div class="history-item">
         <div class="history-head">
-          <div><strong>${esc(log.displayDate || fmtDate(log.logDateIso))}${log.cycleDay ? ` (Jour ${log.cycleDay})` : ''}</strong> - <em>${esc(mood)}</em></div>
+          <div><strong>${esc(log.displayDate || fmtDate(log.logDateIso) || 'Date inconnue')}${log.cycleDay ? ` (Jour ${log.cycleDay})` : ''}</strong> - <em>${esc(mood)}</em></div>
           <div class="history-actions">
-            <button onclick="editLog('${iso}')" title="Modifier">✏️</button>
-            <button onclick="deleteLog('${iso}')" title="Supprimer">🗑️</button>
+            ${log.logDateIso ? `<button onclick="editLog('${iso}')" title="Modifier">✏️</button>
+            <button onclick="deleteLog('${iso}')" title="Supprimer">🗑️</button>` : ''}
           </div>
         </div>
         ${log.isPeriodStart ? `<span style="color:#6c5ce7; font-weight:bold; font-size:0.85rem;">🩸 Début des règles enregistré</span><br>` : ''}
@@ -1511,7 +1543,7 @@
 
   /* TABLEAU DES CYCLES PASSÉS ET CALCUL DURÉE MOYENNE */
   function renderCyclesTableAndAverage() {
-    const logs = getLogs();
+    const logs = datedLogs();
     const periodStarts = logs.filter(l => l.isPeriodStart).sort((a, b) => a.logDateIso.localeCompare(b.logDateIso));
     const periodEnds = logs.filter(l => l.isPeriodEnd).sort((a, b) => a.logDateIso.localeCompare(b.logDateIso));
 
@@ -1666,7 +1698,7 @@
     const bgColors = labels.map(day => guideFor(day).color);
 
     getLogs().forEach(log => {
-      if (!start || !log.moodVal || log.logDateIso < start) return;
+      if (!start || !log.moodVal || !log.logDateIso || log.logDateIso < start) return;
       const day = daysBetween(start, log.logDateIso) + 1;
       if (day >= 1 && day <= cycleLength && dataPoints[day - 1] === null) dataPoints[day - 1] = log.moodVal;
     });
