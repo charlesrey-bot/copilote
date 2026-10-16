@@ -587,10 +587,10 @@
     <h2>⚙️ Configuration & Préférences Personnelles</h2>
     
     <label>Premier jour des dernières règles :</label>
-    <input type="date" id="startDate" onchange="saveSettings()">
+    <input type="date" id="startDate" onchange="saveSettings()" oninput="saveSettings()" onblur="saveSettings()">
     
     <label>Dernier jour des règles (optionnel) :</label>
-    <input type="date" id="endDate" onchange="saveSettings()">
+    <input type="date" id="endDate" onchange="saveSettings()" oninput="saveSettings()" onblur="saveSettings()">
     
     <label>Durée moyenne du cycle (jours) :</label>
     <input type="number" id="cycleLength" value="28" min="20" max="40" onchange="saveSettings()">
@@ -630,7 +630,8 @@
     </div>
     <input type="file" id="importFileInput" style="display: none;" accept=".json" onchange="processImportFile(event)">
 
-    <p class="scene-caption">💾 Les réglages sont enregistrés automatiquement sur ce téléphone.</p>
+    <button class="btn-primary" onclick="saveSettingsNow()" style="margin-top: 15px; font-size:1rem;">💾 Enregistrer la configuration</button>
+    <div id="settingsStatus" class="autosave-status">💾 Les réglages sont aussi enregistrés automatiquement à chaque changement.</div>
   </div>
 
 </div>
@@ -858,7 +859,7 @@
     t.textContent = text;
     t.classList.add('show');
     clearTimeout(showToast._timer);
-    showToast._timer = setTimeout(() => t.classList.remove('show'), 1800);
+    showToast._timer = setTimeout(() => t.classList.remove('show'), 2600);
   }
 
   function initSecurityAndTheme() {
@@ -1753,6 +1754,29 @@
 
     showToast("✅ Configuration enregistrée");
     updateDashboard();
+    renderSettingsStatus();
+  }
+
+  function saveSettingsNow() {
+    clearTimeout(settingsTimer);
+    saveSettings();
+    if (localStorage.getItem('startDate')) window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function renderSettingsStatus() {
+    const box = el('settingsStatus');
+    if (!box) return;
+    const start = localStorage.getItem('startDate');
+    box.classList.remove('pending', 'warn');
+    if (!start) {
+      box.classList.add('warn');
+      box.textContent = "⚠️ Choisis le « Premier jour des dernières règles » : l'app en a besoin pour fonctionner.";
+      return;
+    }
+    const time = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    const end = localStorage.getItem('endDate');
+    box.textContent = `✅ Enregistré sur ce téléphone (${time}) : début des règles le ${fmtDate(start)}` +
+      (end ? `, fin le ${fmtDate(end)}` : '') + `, cycle de ${getCycleLength()} jours.`;
   }
 
   function exportData() {
@@ -1833,13 +1857,31 @@
     });
   }
 
-  window.onload = function () {
+  // Toute erreur inattendue s'affiche à l'écran au lieu de bloquer l'app en silence
+  window.addEventListener('error', e => {
+    const box = el('settingsStatus');
+    const msg = `⚠️ Erreur : ${e.message} (ligne ${e.lineno}). Fais une capture d'écran de ce message.`;
+    if (box) { box.classList.add('warn'); box.textContent = msg; }
+    showToast(msg);
+  });
+
+  function startApp() {
+    if (startApp.done) return;
+    startApp.done = true;
     registerServiceWorker();
     requestPersistentStorage();
     initSecurityAndTheme();
     wireAutoSave();
     updateDashboard();
-  };
+    renderSettingsStatus();
+    if (localStorage.getItem('startDate')) {
+      const box = el('settingsStatus');
+      box.textContent = `✅ Configuration enregistrée : début des règles le ${fmtDate(localStorage.getItem('startDate'))}, cycle de ${getCycleLength()} jours.`;
+    }
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startApp);
+  else startApp();
+  window.addEventListener('load', () => updateDashboard()); // redessine les graphiques une fois Chart.js chargé
 </script>
 </body>
 </html>
