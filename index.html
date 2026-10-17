@@ -207,6 +207,9 @@
     .toast { position: fixed; left: 50%; bottom: max(20px, env(safe-area-inset-bottom)); transform: translateX(-50%) translateY(20px); background: rgba(45, 52, 54, 0.95); color: #fff; padding: 10px 16px; border-radius: 20px; font-size: 0.85rem; opacity: 0; transition: 0.3s; z-index: 10001; pointer-events: none; }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+    details.older-logs { margin-top: 10px; border: 1px solid var(--border); border-radius: 10px; padding: 0 10px; }
+    details.older-logs summary { cursor: pointer; padding: 10px 0; font-weight: bold; color: var(--subtext); list-style-position: inside; }
+    details.older-logs[open] summary { border-bottom: 1px solid var(--border); }
     .history-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
     .history-actions { display: flex; gap: 4px; flex-shrink: 0; }
     .history-actions button { width: auto; margin: 0; padding: 4px 8px; font-size: 0.8rem; border-radius: 14px; cursor: pointer; background: var(--input-bg); }
@@ -515,6 +518,7 @@
     <label style="margin-top:12px;">Notes contextuelles générales :</label>
     <textarea id="dailyNote" rows="3" placeholder="Ex: Journée fluide dans l'ensemble. Très réceptive au café apporté le matin."></textarea>
     
+    <button class="btn-primary" onclick="startNewObservationFromButton()" style="margin-top:14px; background:#6c5ce7;">➕ Nouvelle observation</button>
     <div id="autoSaveStatus" class="autosave-status">💾 Enregistrement automatique : chaque changement est sauvegardé sur ce téléphone.</div>
   </div>
 
@@ -858,13 +862,25 @@
     let raw;
     try { raw = JSON.parse(localStorage.getItem('cycleLogs') || "[]"); } catch (e) { return []; }
     if (!Array.isArray(raw)) return [];
-    return raw.map(normalizeLog).filter(Boolean);
+    const logs = raw.map(normalizeLog).filter(Boolean);
+    let migrated = false;
+    logs.forEach((l, i) => {
+      if (!l.id) { l.id = `old-${i}-${l.logDateIso || 'x'}`; migrated = true; }
+    });
+    if (migrated) {
+      try { localStorage.setItem('cycleLogs', JSON.stringify(logs)); } catch (e) { /* lecture seule */ }
+    }
+    return logs;
   }
   // Uniquement les notes qui ont une date exploitable (pour les calculs de cycle)
   function datedLogs(logs) { return (logs || getLogs()).filter(l => l.logDateIso); }
   function setLogs(logs) {
-    logs.sort((a, b) => (b.logDateIso || '').localeCompare(a.logDateIso || ''));
+    logs.sort(compareLogsNewestFirst);
     return store('cycleLogs', JSON.stringify(logs));
+  }
+  function compareLogsNewestFirst(a, b) {
+    return (b.logDateIso || '').localeCompare(a.logDateIso || '') ||
+      (b.createdAt || '').localeCompare(a.createdAt || '');
   }
   function getCycleLength() { return parseInt(localStorage.getItem('cycleLength')) || 28; }
   function guideFor(day) { return DAILY_GUIDE[Math.min(Math.max(day || 1, 1), 28)]; }
@@ -906,8 +922,7 @@
     }
 
     loadPrefsIntoForm();
-    el('logDate').value = todayIso();
-    loadObservationForDate(todayIso());
+    startNewObservation(todayIso());
   }
 
   function loadPrefsIntoForm() {
@@ -1004,10 +1019,18 @@
 
   /* =====================================================================
      ENREGISTREMENT AUTOMATIQUE DE L'OBSERVATION
-     Une observation par date. Chaque modification est sauvegardée sur le
-     téléphone (localStorage) après une courte pause, et aussi dès que l'app
-     passe en arrière-plan. Choisir une autre date recharge son observation.
+     Chaque observation est une entrée distincte du journal (plusieurs par
+     jour possibles). Ce qui est tapé est sauvegardé sur le téléphone après
+     une courte pause et dès que l'app passe en arrière-plan.
+     « ➕ Nouvelle observation » démarre une nouvelle entrée ; ✏️ dans le
+     journal rouvre une entrée existante pour la modifier.
      ===================================================================== */
+
+  let currentEntryId = null;
+
+  function newEntryId() {
+    return 'obs-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7);
+  }
 
   function toggleChip(element) {
     element.classList.toggle('selected');
@@ -1037,13 +1060,16 @@
         box.textContent = "✏️ Modification en cours… enregistrement automatique dans un instant.";
         break;
       case 'saved':
-        box.textContent = `✅ Observation du ${dateTxt} enregistrée automatiquement sur ce téléphone (${time}).`;
+        box.textContent = `✅ Observation du ${dateTxt} ajoutée au journal (${time}). Appuie sur « ➕ Nouvelle observation » pour en écrire une autre.`;
         break;
       case 'loaded':
-        box.textContent = `📂 Observation du ${dateTxt} chargée. Vos modifications sont enregistrées automatiquement.`;
+        box.textContent = `📂 Tu modifies l'observation du ${dateTxt}. Les changements sont enregistrés automatiquement.`;
         break;
       case 'deleted':
         box.textContent = `🗑️ Observation du ${dateTxt} vidée : elle a été retirée du journal.`;
+        break;
+      case 'new':
+        box.textContent = "📝 Nouvelle observation : remplis les champs, elle s'ajoute toute seule au journal.";
         break;
       case 'error':
         box.classList.add('warn');
@@ -1091,29 +1117,8 @@
       f.symptoms.length === 0 && f.tags.length === 0 && !f.isPeriodStart && !f.isPeriodEnd;
   }
 
-  // Les anciennes versions pouvaient créer plusieurs notes pour la même date : on les fusionne.
-  function mergeEntries(entries) {
-    if (entries.length === 0) return null;
-    if (entries.length === 1) return entries[0];
-    const moods = entries.map(e => e.moodVal).filter(v => v);
-    return {
-      ...entries[0],
-      moodVal: moods.length ? Math.min(...moods) : null,
-      note: entries.map(e => e.note).filter(Boolean).join(' / '),
-      isCrisis: entries.some(e => e.isCrisis),
-      crisisNote: entries.map(e => e.crisisNote).filter(Boolean).join(' / '),
-      symptoms: [...new Set(entries.flatMap(e => e.symptoms || []))],
-      tags: [...new Set(entries.flatMap(e => e.tags || []))],
-      isPeriodStart: entries.some(e => e.isPeriodStart),
-      isPeriodEnd: entries.some(e => e.isPeriodEnd)
-    };
-  }
-
-  function loadObservationForDate(date) {
+  function fillForm(entry) {
     isLoadingForm = true;
-    currentFormDate = date;
-    const entry = mergeEntries(getLogs().filter(l => l.logDateIso === date));
-
     el('moodSelect').value = entry && entry.moodVal ? String(entry.moodVal) : "";
     el('dailyNote').value = entry ? (entry.note || "") : "";
     el('isCrisisCheck').checked = !!(entry && entry.isCrisis);
@@ -1125,9 +1130,23 @@
       c.classList.toggle('selected', !!(entry && (entry.symptoms || []).includes(c.dataset.val))));
     document.querySelectorAll('#tagsGroup .chip').forEach(c =>
       c.classList.toggle('selected', !!(entry && (entry.tags || []).includes(c.dataset.val))));
-
     isLoadingForm = false;
-    setSaveStatus(entry ? 'loaded' : 'idle');
+  }
+
+  // Formulaire vide pour une nouvelle entrée (date du jour par défaut)
+  function startNewObservation(date) {
+    flushPendingSaves();
+    currentEntryId = null;
+    currentFormDate = date || todayIso();
+    el('logDate').value = currentFormDate;
+    fillForm(null);
+    setSaveStatus('new');
+  }
+
+  function startNewObservationFromButton() {
+    startNewObservation(todayIso());
+    el('dailyNote').focus();
+    showToast("📝 Nouvelle observation");
   }
 
   // Jour du cycle d'une date passée : compté depuis le début de règles le plus proche avant elle.
@@ -1149,10 +1168,11 @@
     let end = localStorage.getItem('endDate');
     const wasStart = !!(previous && previous.isPeriodStart);
     const wasEnd = !!(previous && previous.isPeriodEnd);
+    const othersSameDay = datedLogs(others).filter(l => l.logDateIso === date);
 
     if (form.isPeriodStart && (!start || date > start)) {
       start = date;
-    } else if (!form.isPeriodStart && wasStart && start === date) {
+    } else if (!form.isPeriodStart && wasStart && start === date && !othersSameDay.some(l => l.isPeriodStart)) {
       const otherStarts = datedLogs(others).filter(l => l.isPeriodStart).map(l => l.logDateIso).sort();
       const manual = localStorage.getItem('startDateManual');
       start = otherStarts.length ? otherStarts[otherStarts.length - 1] : (manual && manual !== date ? manual : null);
@@ -1160,7 +1180,7 @@
 
     if (form.isPeriodEnd && (!start || date >= start)) {
       end = date;
-    } else if (!form.isPeriodEnd && wasEnd && end === date) {
+    } else if (!form.isPeriodEnd && wasEnd && end === date && !othersSameDay.some(l => l.isPeriodEnd)) {
       const otherEnds = datedLogs(others).filter(l => l.isPeriodEnd && (!start || l.logDateIso >= start)).map(l => l.logDateIso).sort();
       end = otherEnds.length ? otherEnds[otherEnds.length - 1] : null;
     }
@@ -1172,21 +1192,34 @@
 
   function autoSaveObservation() {
     autoSaveTimer = null;
-    const date = currentFormDate;
+    const date = el('logDate').value || currentFormDate;
     if (!date) return;
+    currentFormDate = date;
 
     const form = collectForm();
     const logs = getLogs();
-    const previous = mergeEntries(logs.filter(l => l.logDateIso === date));
-    const others = logs.filter(l => l.logDateIso !== date);
+    const previous = currentEntryId ? logs.find(l => l.id === currentEntryId) || null : null;
+    const others = logs.filter(l => !previous || l.id !== previous.id);
+    const noFlags = { isPeriodStart: false, isPeriodEnd: false };
 
-    updatePeriodAnchors(date, form, previous, others);
+    // si la date de l'entrée a été changée, on libère d'abord l'ancienne date
+    if (previous && previous.logDateIso && previous.logDateIso !== date) {
+      updatePeriodAnchors(previous.logDateIso, noFlags, previous, others);
+      updatePeriodAnchors(date, form, null, others);
+    } else {
+      updatePeriodAnchors(date, form, previous, others);
+    }
 
     if (isEmptyForm(form)) {
+      if (!previous) { setSaveStatus('new'); return; }
       if (!setLogs(others)) return;
-      if (previous) setSaveStatus('deleted'); else setSaveStatus('idle');
+      currentEntryId = null;
+      setSaveStatus('deleted');
     } else {
+      const now = new Date().toISOString();
+      if (!currentEntryId) currentEntryId = newEntryId();
       others.push({
+        id: currentEntryId,
         logDateIso: date,
         displayDate: fmtDate(date),
         cycleDay: cycleDayForLogDate(date, others),
@@ -1199,7 +1232,8 @@
         crisisNote: form.crisisNote,
         isPeriodStart: form.isPeriodStart,
         isPeriodEnd: form.isPeriodEnd,
-        updatedAt: new Date().toISOString()
+        createdAt: (previous && previous.createdAt) || now,
+        updatedAt: now
       });
       if (!setLogs(others)) return;
       setSaveStatus('saved');
@@ -1207,22 +1241,28 @@
     updateDashboard();
   }
 
-  function editLog(date) {
+  function editLog(id) {
     flushPendingSaves();
-    el('logDate').value = date;
-    loadObservationForDate(date);
+    const entry = getLogs().find(l => l.id === id);
+    if (!entry) return;
+    currentEntryId = entry.id;
+    currentFormDate = entry.logDateIso || todayIso();
+    el('logDate').value = currentFormDate;
+    fillForm(entry);
+    setSaveStatus('loaded');
     el('logDate').closest('.card').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  function deleteLog(date) {
-    if (!confirm(`Supprimer l'observation du ${fmtDate(date)} ?`)) return;
-    flushPendingSaves();
+  function deleteLog(id) {
     const logs = getLogs();
-    const previous = mergeEntries(logs.filter(l => l.logDateIso === date));
-    const others = logs.filter(l => l.logDateIso !== date);
-    updatePeriodAnchors(date, { isPeriodStart: false, isPeriodEnd: false }, previous, others);
+    const entry = logs.find(l => l.id === id);
+    if (!entry) return;
+    if (!confirm(`Supprimer l'observation du ${fmtDate(entry.logDateIso) || 'date inconnue'} ?`)) return;
+    flushPendingSaves();
+    const others = getLogs().filter(l => l.id !== id);
+    if (entry.logDateIso) updatePeriodAnchors(entry.logDateIso, { isPeriodStart: false, isPeriodEnd: false }, entry, others);
     setLogs(others);
-    if (currentFormDate === date) loadObservationForDate(date);
+    if (currentEntryId === id) startNewObservation(todayIso());
     updateDashboard();
     showToast("🗑️ Observation supprimée");
   }
@@ -1338,8 +1378,7 @@
       const since = daysSinceCrisisStart(day, cycleLength);
       volcano = since <= 4 || since >= cycleLength - 3;
     }
-    const today = getLogs().find(l => l.logDateIso === todayIso());
-    if (today && today.isCrisis) volcano = true;
+    if (getLogs().some(l => l.logDateIso === todayIso() && l.isCrisis)) volcano = true;
 
     document.body.classList.toggle('scene-volcano', volcano);
     document.body.classList.toggle('scene-calm', !volcano);
@@ -1506,8 +1545,31 @@
     renderLogs();
   }
 
+  const VISIBLE_LOGS = 15;
+
+  function renderLogItem(log) {
+    const id = esc(log.id);
+    const mood = log.moodVal ? (MOOD_LABELS[log.moodVal] || log.moodText) : "Humeur non notée";
+    return `
+      <div class="history-item">
+        <div class="history-head">
+          <div><strong>${esc(log.displayDate || fmtDate(log.logDateIso) || 'Date inconnue')}${log.cycleDay ? ` (Jour ${log.cycleDay})` : ''}</strong> - <em>${esc(mood)}</em></div>
+          <div class="history-actions">
+            <button onclick="editLog('${id}')" title="Modifier">✏️</button>
+            <button onclick="deleteLog('${id}')" title="Supprimer">🗑️</button>
+          </div>
+        </div>
+        ${log.isPeriodStart ? `<span style="color:#6c5ce7; font-weight:bold; font-size:0.85rem;">🩸 Début des règles enregistré</span><br>` : ''}
+        ${log.isPeriodEnd ? `<span style="color:#2ecc71; font-weight:bold; font-size:0.85rem;">🏁 Fin des règles enregistrée</span><br>` : ''}
+        ${log.isCrisis ? `<div class="crisis-box">🚨 <strong>Signalement Crise :</strong> ${esc(log.crisisNote) || 'Avis de tension enregistré'}</div>` : ''}
+        ${log.symptoms && log.symptoms.length > 0 ? `<span style="color:#e74c3c; font-size:0.88rem;">🚨 Symptômes: ${esc(log.symptoms.join(', '))}</span><br>` : ''}
+        ${log.tags && log.tags.length > 0 ? `<span style="color:#2ecc71; font-size:0.88rem;">✅ Gestes: ${esc(log.tags.join(', '))}</span><br>` : ''}
+        ${log.note ? `<span>${esc(log.note)}</span>` : ''}
+      </div>`;
+  }
+
   function renderLogs() {
-    let logs = getLogs().sort((a, b) => (b.logDateIso || '').localeCompare(a.logDateIso || ''));
+    let logs = getLogs().sort(compareLogsNewestFirst);
     const container = el('historyList');
 
     if (historyFilter === 'crises') {
@@ -1519,26 +1581,18 @@
       return;
     }
 
-    container.innerHTML = logs.map(log => {
-      const iso = esc(log.logDateIso);
-      const mood = log.moodVal ? (MOOD_LABELS[log.moodVal] || log.moodText) : "Humeur non notée";
-      return `
-      <div class="history-item">
-        <div class="history-head">
-          <div><strong>${esc(log.displayDate || fmtDate(log.logDateIso) || 'Date inconnue')}${log.cycleDay ? ` (Jour ${log.cycleDay})` : ''}</strong> - <em>${esc(mood)}</em></div>
-          <div class="history-actions">
-            ${log.logDateIso ? `<button onclick="editLog('${iso}')" title="Modifier">✏️</button>
-            <button onclick="deleteLog('${iso}')" title="Supprimer">🗑️</button>` : ''}
-          </div>
-        </div>
-        ${log.isPeriodStart ? `<span style="color:#6c5ce7; font-weight:bold; font-size:0.85rem;">🩸 Début des règles enregistré</span><br>` : ''}
-        ${log.isPeriodEnd ? `<span style="color:#2ecc71; font-weight:bold; font-size:0.85rem;">🏁 Fin des règles enregistrée</span><br>` : ''}
-        ${log.isCrisis ? `<div class="crisis-box">🚨 <strong>Signalement Crise :</strong> ${esc(log.crisisNote) || 'Avis de tension enregistré'}</div>` : ''}
-        ${log.symptoms && log.symptoms.length > 0 ? `<span style="color:#e74c3c; font-size:0.88rem;">🚨 Symptômes: ${esc(log.symptoms.join(', '))}</span><br>` : ''}
-        ${log.tags && log.tags.length > 0 ? `<span style="color:#2ecc71; font-size:0.88rem;">✅ Gestes: ${esc(log.tags.join(', '))}</span><br>` : ''}
-        ${log.note ? `<span>${esc(log.note)}</span>` : ''}
-      </div>`;
-    }).join('');
+    const wasOpen = !!(container.querySelector('details.older-logs') || {}).open;
+    const recent = logs.slice(0, VISIBLE_LOGS);
+    const older = logs.slice(VISIBLE_LOGS);
+    let html = `<p class="scene-caption" style="margin-top:0;">${logs.length} observation${logs.length > 1 ? 's' : ''} au total.</p>`;
+    html += recent.map(renderLogItem).join('');
+    if (older.length) {
+      html += `<details class="older-logs"${wasOpen ? ' open' : ''}>
+        <summary>📂 Voir les ${older.length} observation${older.length > 1 ? 's' : ''} plus ancienne${older.length > 1 ? 's' : ''}</summary>
+        ${older.map(renderLogItem).join('')}
+      </details>`;
+    }
+    container.innerHTML = html;
   }
 
   /* TABLEAU DES CYCLES PASSÉS ET CALCUL DURÉE MOYENNE */
@@ -1850,7 +1904,7 @@
         if (Array.isArray(imported.cycleLogs)) setLogs(imported.cycleLogs);
         alert("Données importées avec succès !");
         loadPrefsIntoForm();
-        loadObservationForDate(el('logDate').value || todayIso());
+        startNewObservation(todayIso());
         updateDashboard();
       } catch (err) { alert("Fichier de sauvegarde invalide."); }
       event.target.value = '';
@@ -1859,10 +1913,7 @@
   }
 
   function wireAutoSave() {
-    el('logDate').addEventListener('change', e => {
-      flushPendingSaves();
-      loadObservationForDate(e.target.value);
-    });
+    el('logDate').addEventListener('change', () => scheduleAutoSave(150));
     el('moodSelect').addEventListener('change', () => scheduleAutoSave(150));
     el('dailyNote').addEventListener('input', () => scheduleAutoSave());
     el('crisisNote').addEventListener('input', () => scheduleAutoSave());
@@ -1880,10 +1931,7 @@
         flushPendingSaves();
       } else if (lastRenderDay && lastRenderDay !== todayIso()) {
         // L'app est restée ouverte jusqu'au lendemain : on passe au nouveau jour
-        if (currentFormDate === lastRenderDay) {
-          el('logDate').value = todayIso();
-          loadObservationForDate(todayIso());
-        }
+        if (!currentEntryId && currentFormDate === lastRenderDay) startNewObservation(todayIso());
         updateDashboard();
       }
     });
