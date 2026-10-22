@@ -210,6 +210,15 @@
     details.older-logs { margin-top: 10px; border: 1px solid var(--border); border-radius: 10px; padding: 0 10px; }
     details.older-logs summary { cursor: pointer; padding: 10px 0; font-weight: bold; color: var(--subtext); list-style-position: inside; }
     details.older-logs[open] summary { border-bottom: 1px solid var(--border); }
+    .fe-month { font-weight: bold; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--subtext); margin: 12px 0 4px; }
+    .fe-line { display: flex; gap: 8px; align-items: baseline; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 0.88rem; color: var(--text); text-decoration: none; }
+    .fe-line:last-child { border-bottom: none; }
+    .fe-date { flex: 0 0 92px; font-weight: bold; color: #6c5ce7; font-size: 0.82rem; }
+    .fe-text { flex: 1; min-width: 0; }
+    .fe-place { color: var(--subtext); font-size: 0.8rem; }
+    .fe-tag { display: inline-block; font-size: 0.7rem; padding: 1px 6px; border-radius: 8px; margin-left: 4px; vertical-align: middle; }
+    .fe-tag.now { background: rgba(46, 204, 113, 0.18); color: #1e8449; }
+    .fe-tag.tbc { background: rgba(243, 156, 18, 0.18); color: #b9770e; }
     .history-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
     .history-actions { display: flex; gap: 4px; flex-shrink: 0; }
     .history-actions button { width: auto; margin: 0; padding: 4px 8px; font-size: 0.8rem; border-radius: 14px; cursor: pointer; background: var(--input-bg); }
@@ -636,6 +645,14 @@
 
     <button class="btn-primary" onclick="saveSettingsNow()" style="margin-top: 15px; font-size:1rem;">💾 Enregistrer la configuration</button>
     <div id="settingsStatus" class="autosave-status">💾 Les réglages sont aussi enregistrés automatiquement à chaque changement.</div>
+  </div>
+
+  <!-- 10. SORTIES EN FAMILLE (manifestations datées autour de L'Isle VD) -->
+  <div class="card" id="cardFamilyEvents">
+    <h2>🎈 Sorties en famille – région de L'Isle (VD)</h2>
+    <p style="font-size:0.8rem; color:var(--subtext); margin-top:0;">Manifestations datées pour les petits (1 et 4 ans), avec la distance depuis L'Isle. Touche une ligne pour ouvrir la page de l'événement.</p>
+    <div id="familyEventsList"></div>
+    <p class="scene-caption" id="familyEventsFooter"></p>
   </div>
 
 </div>
@@ -1390,7 +1407,70 @@
     if (field && document.activeElement !== field) field.value = value;
   }
 
+  /* ---------- Sorties en famille : manifestations datées (pas les activités permanentes) ----------
+     Liste recherchée le 22.10.2026 dans les agendas publics (kidora.ch, agenda-romand.ch,
+     tempslibre.ch, leprogramme.ch, offices du tourisme). Les dates passées disparaissent toutes seules.
+     confirmed:false = date annoncée mais pas encore confirmée par l'organisateur. */
+  const FAMILY_EVENTS_UPDATED = '2026-10-22';
+  const FAMILY_EVENTS = [
+    { start: '2026-10-28', title: '🎷 Concert parents-enfants (jazz, gratuit)', place: 'Lausanne, Casino de Montbenon', km: 30, url: 'https://tempslibre.ch/vaud/concerts/454089-concert-parents-enfants-natan-niddam-friends' },
+    { start: '2026-10-31', title: '🎃 Halloween au château : courges à sculpter, contes, cirque (15h-22h)', place: 'Morges, Château', km: 20, url: 'https://kidora.ch/evenements/halloween-au-chateau-de-morges' },
+    { start: '2026-10-31', title: '🎃 Halloween : bricolage 16h, chasse aux bonbons 17h30, soupe à la courge', place: 'Le Pont, Vallée de Joux', km: 15, url: 'https://kidora.ch/evenements/halloween-le-pont-10-31' },
+    { start: '2026-10-31', title: '🎵 « Harpapier » spectacle tout-petits 0-5 ans (10h30 / 16h)', place: 'Gland, Théâtre de Grand-Champ', km: 35, url: 'https://vd.leprogramme.ch/theatre/harpapier-cie-frakt/gland/theatre-de-grand-champ//spectacle-enfants/' },
+    { start: '2026-10-31', title: "👻 Conte d'Halloween tendre et malicieux", place: 'Prangins, Château', km: 35, url: 'https://agenda-romand.ch/events/halloween-au-chateau-de-prangins-2026/' },
+    { start: '2026-11-01', title: '📖 « Tartine de conte » : histoires au petit-déjeuner', place: 'Crassier, Atelier de Mlle F', km: 45, url: 'https://tempslibre.ch/vaud/juniors/454040-tartine-de-conte' },
+    { start: '2026-11-20', end: '2026-12-31', title: '🎄 Bô Noël : marchés de Noël en ville (fermé le 25)', place: 'Lausanne, centre', km: 30, url: 'https://www.lausanne-tourisme.ch/en/event/bo-noel-lausanne-marches-de-noel/' },
+    { start: '2026-11-20', end: '2026-12-24', title: '🎅 Montreux Noël : le Père Noël vole au-dessus des quais (17h, 18h, 19h)', place: 'Montreux, quais', km: 55, url: 'https://kidora.ch/guide/marches-de-noel-suisse-romande' },
+    { start: '2026-11-20', end: '2026-12-24', title: '🚂 Maison du Père Noël, en train à crémaillère', place: 'Montreux, Rochers-de-Naye', km: 55, url: 'https://agenda-romand.ch/marches-de-noel-vaud/' },
+    { start: '2026-11-28', title: "🕯️ Atelier en famille : couronne de l'Avent", place: 'Prangins, Château (Musée national)', km: 35, url: 'https://www.tempslibre.ch/vaud/juniors-spectacles' },
+    { start: '2026-11-28', title: '🎄 Marché de Noël de Bière', place: 'Bière', km: 10, url: 'https://agenda-romand.ch/marches-de-noel-vaud/', confirmed: false },
+    { start: '2026-11-28', end: '2026-12-13', title: "🏰 Noël médiéval au château (3 week-ends de l'Avent)", place: 'Veytaux, Château de Chillon', km: 60, url: 'https://agenda-romand.ch/marches-de-noel-vaud/' },
+    { start: '2026-11-28', end: '2026-12-23', title: "🎄 Marché de Noël d'Yverdon", place: 'Yverdon-les-Bains', km: 35, url: 'https://agenda-romand.ch/marches-de-noel-vaud/', confirmed: false },
+    { start: '2026-11-29', title: '🎅 Foire de Noël : crèche vivante, contes, Père Noël (9h-17h)', place: 'Orbe, vieille ville', km: 25, url: 'https://kidora.ch/guide/marches-de-noel-suisse-romande' },
+    { start: '2026-12-02', end: '2026-12-20', title: '🎄 Marché de Noël au château', place: 'Morges, Château', km: 20, url: 'https://www.morges-tourisme.ch/en/events/christmas-market-in-the-castle-of-morges/' },
+    { start: '2026-12-09', end: '2026-12-13', title: '🎅 Le Sentier de Noël : ateliers, contes, visite du Père Noël', place: 'Le Sentier, Vallée de Joux', km: 20, url: 'https://www.j3l.ch/en/P106252/things-to-do/events/market/le-sentier-de-noel' },
+    { start: '2026-12-13', title: '🧝 Marché de Noël du Bourg : Père Noël et lutins', place: 'Lutry', km: 40, url: 'https://agenda-romand.ch/marches-de-noel-vaud/' },
+    { start: '2026-12-16', end: '2026-12-24', title: '⛸️ Noël Nordique : patinoire et aurores boréales', place: 'Vevey, Jardin du Rivage', km: 50, url: 'https://kidora.ch/guide/marches-de-noel-suisse-romande' },
+    { start: '2026-12-19', title: "🎅 Aubon'Noël : village de Noël et arrivée du Père Noël", place: 'Aubonne, Château', km: 15, url: 'https://agenda-romand.ch/marches-de-noel-vaud/', confirmed: false },
+    { start: '2027-01-16', end: '2027-01-24', title: "🎭 « Toi M'aimes ! » spectacle dès 2 ans", place: 'Lausanne, Le Petit Théâtre', km: 30, url: 'https://lepetittheatre.ch/' }
+  ];
+
+  function fmtShortDate(iso) {
+    return parseIso(iso).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }).replace(/\.$/, '');
+  }
+
+  function renderFamilyEvents() {
+    const list = el('familyEventsList');
+    if (!list) return;
+    const today = todayIso();
+    const shown = e => (e.start < today ? today : e.start);
+    const upcoming = FAMILY_EVENTS
+      .filter(e => (e.end || e.start) >= today)
+      .sort((a, b) => shown(a).localeCompare(shown(b)) || a.km - b.km);
+
+    if (!upcoming.length) {
+      list.innerHTML = "<p style='color:var(--subtext);'>Plus de sorties dans la liste : demande une mise à jour.</p>";
+    } else {
+      let month = '';
+      list.innerHTML = upcoming.map(e => {
+        const m = parseIso(shown(e)).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+        const head = m !== month ? `<div class="fe-month">${esc(m)}</div>` : '';
+        month = m;
+        const ongoing = e.start <= today && (e.end || e.start) >= today;
+        const date = e.end ? `${fmtShortDate(e.start)} → ${fmtShortDate(e.end)}` : fmtShortDate(e.start);
+        const tags = (ongoing ? '<span class="fe-tag now">en cours</span>' : '') +
+          (e.confirmed === false ? '<span class="fe-tag tbc">date à confirmer</span>' : '');
+        return `${head}<a class="fe-line" href="${esc(e.url)}" target="_blank" rel="noopener">
+          <span class="fe-date">${esc(date)}</span>
+          <span class="fe-text">${esc(e.title)}${tags}<br><span class="fe-place">📍 ${esc(e.place)} · ${e.km} km</span></span>
+        </a>`;
+      }).join('');
+    }
+    el('familyEventsFooter').textContent = `Liste établie le ${fmtDate(FAMILY_EVENTS_UPDATED)} à partir des agendas publics. Vérifie l'horaire sur la page de l'événement avant de partir.`;
+  }
+
   function updateDashboard() {
+    renderFamilyEvents();
     lastRenderDay = todayIso();
     renderLogs();
     renderBehaviorAnalysis();
