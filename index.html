@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title id="appTitle">Live longer</title>
+  <title id="appTitle">Live free or Die hard</title>
 
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="Live longer">
-  <meta name="application-name" content="Live longer">
+  <meta name="apple-mobile-web-app-title" content="Live free or Die hard">
+  <meta name="application-name" content="Live free or Die hard">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" id="themeColorMeta" content="#2e9be6">
   <!-- Icône de volcan en feu (raccourci écran d'accueil) : images intégrées, aucun lien externe -->
@@ -407,7 +407,7 @@
   
   <!-- BARRE SUPÉRIEURE -->
   <div class="header-bar">
-    <div class="header-title" id="headerTitle">🛡️ Live longer</div>
+    <div class="header-title" id="headerTitle">🛡️ Live free or Die hard</div>
     <div style="display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end;">
       <button class="btn-icon" onclick="toggleStealthMode()" id="stealthBtn" title="Camouflage">🥷 Masquer</button>
       <button class="btn-sos" onclick="openSosModal()" id="sosBtn" style="font-size:0.8rem;">🚨 SOS</button>
@@ -996,12 +996,12 @@
       document.title = "Gestionnaire de Tâches";
     } else {
       stealthBtn.innerText = "🥷 Masquer";
-      el('headerTitle').innerText = "🛡️ Live longer";
+      el('headerTitle').innerText = "🛡️ Live free or Die hard";
       el('dashHeaderTitle').innerText = "📊 Guide Tactique du Jour";
       el('labelDay').innerText = "Jour du cycle";
       el('intimacyTip').style.display = 'block';
       el('cardPlanner').style.display = 'block';
-      document.title = "Live longer";
+      document.title = "Live free or Die hard";
     }
     updateDashboard();
   }
@@ -1390,7 +1390,7 @@
   function notifyOncePerDay(criticalDay) {
     if (!('Notification' in window) || Notification.permission !== 'granted') return;
     if (localStorage.getItem('lastAlarmNotif') === todayIso()) return;
-    const title = "⏰ Alerte Préventive J-2 (Live longer)";
+    const title = "⏰ Alerte Préventive J-2 (Live free or Die hard)";
     const options = {
       body: `Période sensible estimée dans 2 jours (Jour ${criticalDay}). Pensez aux petites attentions et au repos !`,
       icon: 'icon-192.png',
@@ -1942,7 +1942,7 @@
     const today = todayIso();
     const stamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
 
-    const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Live longer//FR", "CALSCALE:GREGORIAN"];
+    const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Live free or Die hard//FR", "CALSCALE:GREGORIAN"];
     let count = 0;
     for (let c = 0; c < 12 && count < 6; c++) {
       const alertIso = addDays(startDate, c * cycleLen + alarmDay - 1);
@@ -1954,7 +1954,7 @@
         `DTSTAMP:${stamp}`,
         `DTSTART;VALUE=DATE:${d}`,
         `DTEND;VALUE=DATE:${addDays(alertIso, 1).replace(/-/g, '')}`,
-        "SUMMARY:⏰ ALARME J-2 Zone Sensible (Live longer)",
+        "SUMMARY:⏰ ALARME J-2 Zone Sensible (Live free or Die hard)",
         `DESCRIPTION:Période sensible estimée à partir du jour ${criticalDay}. Prévoir petites attentions\\, courses de réconfort et alléger le programme.`,
         "BEGIN:VALARM", "ACTION:DISPLAY", "DESCRIPTION:Zone sensible dans 2 jours", "TRIGGER:PT9H", "END:VALARM",
         "END:VEVENT"
@@ -2093,8 +2093,8 @@
     const email = (el('backupEmail').value || localStorage.getItem('backupEmail') || '').trim();
     if (email) store('backupEmail', email);
     const text = buildBackupText();
-    const name = `live-longer-sauvegarde-${todayIso()}.txt`;
-    const subject = `Sauvegarde Live longer du ${fmtDate(todayIso())}`;
+    const name = `live-free-or-die-hard-sauvegarde-${todayIso()}.txt`;
+    const subject = `Sauvegarde Live free or Die hard du ${fmtDate(todayIso())}`;
     if (email && navigator.clipboard) { try { await navigator.clipboard.writeText(email); } catch (e) { /* pas grave */ } }
 
     // 1) Menu « Partager » du téléphone avec le fichier en pièce jointe (Android, iPhone)
@@ -2117,7 +2117,7 @@
     a.download = name;
     document.body.appendChild(a); a.click(); a.remove();
     if (email) {
-      const body = `Sauvegarde mensuelle de Live longer.\nJoins le fichier ${name} qui vient d'être téléchargé.\nPour la restaurer : Configuration > Importer.`;
+      const body = `Sauvegarde mensuelle de Live free or Die hard.\nJoins le fichier ${name} qui vient d'être téléchargé.\nPour la restaurer : Configuration > Importer.`;
       location.href = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     }
     markBackupSent();
