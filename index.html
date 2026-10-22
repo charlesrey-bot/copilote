@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title id="appTitle">Copilote Tactique - Édition V15</title>
+  <title id="appTitle">Live longer</title>
 
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="Copilote">
-  <meta name="application-name" content="Copilote">
+  <meta name="apple-mobile-web-app-title" content="Live longer">
+  <meta name="application-name" content="Live longer">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" id="themeColorMeta" content="#2e9be6">
   <!-- Icône de volcan en feu (raccourci écran d'accueil) : images intégrées, aucun lien externe -->
@@ -212,6 +212,7 @@
     details.older-logs[open] summary { border-bottom: 1px solid var(--border); }
     details.events-dropdown { border: 1px solid var(--border); border-radius: 12px; padding: 0 12px; margin-top: 10px; background: var(--input-bg); }
     details.events-dropdown summary { cursor: pointer; padding: 12px 0; font-weight: bold; font-size: 0.95rem; list-style-position: inside; }
+    details.journal-dropdown summary { font-size: 1.1rem; }
     details.events-dropdown[open] summary { border-bottom: 1px solid var(--border); }
     .events-count { font-weight: normal; font-size: 0.8rem; color: var(--subtext); margin-left: 4px; }
     .fe-month { font-weight: bold; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--subtext); margin: 12px 0 4px; }
@@ -406,7 +407,7 @@
   
   <!-- BARRE SUPÉRIEURE -->
   <div class="header-bar">
-    <div class="header-title" id="headerTitle">🛡️ Copilote Tactique</div>
+    <div class="header-title" id="headerTitle">🛡️ Live longer</div>
     <div style="display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end;">
       <button class="btn-icon" onclick="toggleStealthMode()" id="stealthBtn" title="Camouflage">🥷 Masquer</button>
       <button class="btn-sos" onclick="openSosModal()" id="sosBtn" style="font-size:0.8rem;">🚨 SOS</button>
@@ -419,6 +420,16 @@
   <div id="alarmBanner" class="alarm-box" style="display:none;">
     <strong id="alarmTitle">⏰ ALARME PRÉVENTIVE J-2 (Période Sensible)</strong>
     <div id="alarmText" style="margin-top:4px;">-</div>
+  </div>
+
+  <!-- SAUVEGARDE MENSUELLE (à partir du 6 de chaque mois, jusqu'à l'envoi) -->
+  <div id="backupBanner" class="alarm-box" style="display:none; border-left-color:#0984e3;">
+    <strong>💾 Sauvegarde du mois</strong>
+    <div id="backupBannerText" style="margin-top:4px;">-</div>
+    <div style="display:flex; gap:8px;">
+      <button class="btn-primary" onclick="sendMonthlyBackup()" style="flex:2; background:#0984e3;">📧 Envoyer la sauvegarde</button>
+      <button class="btn-primary" onclick="snoozeBackup()" style="flex:1; background:#b2bec3; color:#2d3436;">Plus tard</button>
+    </div>
   </div>
 
   <!-- 1. TABLEAU DE BORD DU JOUR -->
@@ -537,12 +548,14 @@
 
   <!-- 7. HISTORIQUE DES NOTES AVEC FILTRE CRISE -->
   <div class="card">
-    <h2>📚 Journal des Observations</h2>
-    <div style="margin-bottom:10px; display:flex; gap:8px;">
-      <button class="btn-icon" onclick="filterLogsDisplay('all')" style="flex:1;">Toutes</button>
-      <button class="btn-icon" onclick="filterLogsDisplay('crises')" style="flex:1; border-color:#e74c3c; color:#e74c3c;">🚨 Crises uniquement</button>
-    </div>
-    <div id="historyList">Aucune observation enregistrée.</div>
+    <details class="events-dropdown journal-dropdown" id="journalDropdown">
+      <summary>📚 Journal des Observations <span class="events-count" id="journalCount"></span></summary>
+      <div style="margin:10px 0; display:flex; gap:8px;">
+        <button class="btn-icon" onclick="filterLogsDisplay('all')" style="flex:1;">Toutes</button>
+        <button class="btn-icon" onclick="filterLogsDisplay('crises')" style="flex:1; border-color:#e74c3c; color:#e74c3c;">🚨 Crises uniquement</button>
+      </div>
+      <div id="historyList">Aucune observation enregistrée.</div>
+    </details>
   </div>
 
   <!-- 8. OUTIL D'ANALYSE COMPORTEMENTALE, DES CRISES ET TABLEAU DES CYCLES -->
@@ -599,6 +612,20 @@
     <button class="btn-primary" onclick="generateHealthReport()" style="background:#00b894; margin-top:15px;">📄 Imprimer le Bilan Complet (PDF)</button>
   </div>
 
+  <!-- 10. SORTIES : deux listes déroulantes (enfants / adultes), fermées par défaut -->
+  <div class="card" id="cardFamilyEvents">
+    <h2>📅 Sorties dans la région de L'Isle (VD)</h2>
+    <details class="events-dropdown">
+      <summary>👶 Avec les enfants (1 et 4 ans) <span class="events-count" id="kidsEventsCount"></span></summary>
+      <div id="kidsEventsList"></div>
+    </details>
+    <details class="events-dropdown">
+      <summary>🍷 Entre adultes <span class="events-count" id="adultEventsCount"></span></summary>
+      <div id="adultEventsList"></div>
+    </details>
+    <p class="scene-caption" id="familyEventsFooter"></p>
+  </div>
+
   <!-- 9. CONFIGURATION & PRÉFÉRENCES -->
   <div class="card config-card">
     <h2>⚙️ Configuration & Préférences Personnelles</h2>
@@ -645,24 +672,17 @@
       <button class="btn-primary" onclick="exportData()" style="flex:1;">Exporter (JSON)</button>
       <button class="btn-primary" onclick="importData()" style="flex:1; background: #00b894;">Importer (JSON)</button>
     </div>
-    <input type="file" id="importFileInput" style="display: none;" accept=".json" onchange="processImportFile(event)">
+    <input type="file" id="importFileInput" style="display: none;" accept=".json,.txt,application/json,text/plain" onchange="processImportFile(event)">
+
+    <hr style="border: 0; border-top: 1px solid var(--border); margin: 15px 0;">
+
+    <label>📧 Sauvegarde mensuelle par e-mail (le 6 de chaque mois) :</label>
+    <input type="email" id="backupEmail" placeholder="ton.adresse@gmail.com" autocomplete="email">
+    <button class="btn-primary" onclick="sendMonthlyBackup()" style="background:#0984e3;">📧 Envoyer la sauvegarde maintenant</button>
+    <p class="scene-caption" id="backupStatus"></p>
 
     <button class="btn-primary" onclick="saveSettingsNow()" style="margin-top: 15px; font-size:1rem;">💾 Enregistrer la configuration</button>
     <div id="settingsStatus" class="autosave-status">💾 Les réglages sont aussi enregistrés automatiquement à chaque changement.</div>
-  </div>
-
-  <!-- 10. SORTIES : deux listes déroulantes (enfants / adultes), fermées par défaut -->
-  <div class="card" id="cardFamilyEvents">
-    <h2>📅 Sorties dans la région de L'Isle (VD)</h2>
-    <details class="events-dropdown">
-      <summary>👶 Avec les enfants (1 et 4 ans) <span class="events-count" id="kidsEventsCount"></span></summary>
-      <div id="kidsEventsList"></div>
-    </details>
-    <details class="events-dropdown">
-      <summary>🍷 Entre adultes <span class="events-count" id="adultEventsCount"></span></summary>
-      <div id="adultEventsList"></div>
-    </details>
-    <p class="scene-caption" id="familyEventsFooter"></p>
   </div>
 
 </div>
@@ -956,6 +976,7 @@
     el('prefChocolat').value = localStorage.getItem('prefChocolat') || "";
     el('prefPlat').value = localStorage.getItem('prefPlat') || "";
     el('prefBoisson').value = localStorage.getItem('prefBoisson') || "";
+    if (el('backupEmail')) el('backupEmail').value = localStorage.getItem('backupEmail') || "";
     el('startDate').value = localStorage.getItem('startDate') || "";
     el('endDate').value = localStorage.getItem('endDate') || "";
     el('cycleLength').value = getCycleLength();
@@ -975,12 +996,12 @@
       document.title = "Gestionnaire de Tâches";
     } else {
       stealthBtn.innerText = "🥷 Masquer";
-      el('headerTitle').innerText = "🛡️ Copilote Tactique";
+      el('headerTitle').innerText = "🛡️ Live longer";
       el('dashHeaderTitle').innerText = "📊 Guide Tactique du Jour";
       el('labelDay').innerText = "Jour du cycle";
       el('intimacyTip').style.display = 'block';
       el('cardPlanner').style.display = 'block';
-      document.title = "Copilote Tactique";
+      document.title = "Live longer";
     }
     updateDashboard();
   }
@@ -1369,7 +1390,7 @@
   function notifyOncePerDay(criticalDay) {
     if (!('Notification' in window) || Notification.permission !== 'granted') return;
     if (localStorage.getItem('lastAlarmNotif') === todayIso()) return;
-    const title = "⏰ Alerte Préventive J-2 (Copilote Tactique)";
+    const title = "⏰ Alerte Préventive J-2 (Live longer)";
     const options = {
       body: `Période sensible estimée dans 2 jours (Jour ${criticalDay}). Pensez aux petites attentions et au repos !`,
       icon: 'icon-192.png',
@@ -1519,6 +1540,7 @@
 
   function updateDashboard() {
     renderFamilyEvents();
+    updateBackupUI();
     lastRenderDay = todayIso();
     renderLogs();
     renderBehaviorAnalysis();
@@ -1698,6 +1720,8 @@
 
   function renderLogs() {
     let logs = getLogs().sort(compareLogsNewestFirst);
+    const countEl = el('journalCount');
+    if (countEl) countEl.textContent = `${logs.length} observation${logs.length > 1 ? 's' : ''}`;
     const container = el('historyList');
 
     if (historyFilter === 'crises') {
@@ -1918,7 +1942,7 @@
     const today = todayIso();
     const stamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
 
-    const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Copilote Tactique//FR", "CALSCALE:GREGORIAN"];
+    const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Live longer//FR", "CALSCALE:GREGORIAN"];
     let count = 0;
     for (let c = 0; c < 12 && count < 6; c++) {
       const alertIso = addDays(startDate, c * cycleLen + alarmDay - 1);
@@ -1930,7 +1954,7 @@
         `DTSTAMP:${stamp}`,
         `DTSTART;VALUE=DATE:${d}`,
         `DTEND;VALUE=DATE:${addDays(alertIso, 1).replace(/-/g, '')}`,
-        "SUMMARY:⏰ ALARME J-2 Zone Sensible (Copilote Tactique)",
+        "SUMMARY:⏰ ALARME J-2 Zone Sensible (Live longer)",
         `DESCRIPTION:Période sensible estimée à partir du jour ${criticalDay}. Prévoir petites attentions\\, courses de réconfort et alléger le programme.`,
         "BEGIN:VALARM", "ACTION:DISPLAY", "DESCRIPTION:Zone sensible dans 2 jours", "TRIGGER:PT9H", "END:VALARM",
         "END:VEVENT"
@@ -2013,6 +2037,93 @@
     downloadAnchor.remove();
   }
 
+  /* ---------- Sauvegarde mensuelle par e-mail ----------
+     Une page web ne peut pas envoyer un e-mail toute seule (il faudrait un serveur, qui verrait tes notes).
+     À partir du 6 de chaque mois, un bandeau propose d'envoyer la sauvegarde : un appui ouvre le menu
+     « Partager » du téléphone avec le fichier en pièce jointe ; choisis Gmail, l'adresse est copiée pour
+     être collée dans « À ». L'adresse n'est enregistrée que sur ce téléphone, jamais dans le code publié. */
+  const BACKUP_DAY = 6;
+
+  function buildBackupText() {
+    flushPendingSaves();
+    return JSON.stringify({
+      startDate: localStorage.getItem('startDate'),
+      endDate: localStorage.getItem('endDate'),
+      cycleLength: localStorage.getItem('cycleLength'),
+      prefChocolat: localStorage.getItem('prefChocolat'),
+      prefPlat: localStorage.getItem('prefPlat'),
+      prefBoisson: localStorage.getItem('prefBoisson'),
+      cycleLogs: getLogs()
+    }, null, 2);
+  }
+
+  function currentMonthKey() { return todayIso().slice(0, 7); }
+
+  function markBackupSent() {
+    store('lastBackupMonth', currentMonthKey());
+    store('lastBackupDate', todayIso());
+    updateBackupUI();
+  }
+
+  function snoozeBackup() {
+    store('backupSnoozeDate', todayIso());
+    updateBackupUI();
+  }
+
+  function updateBackupUI() {
+    const banner = el('backupBanner');
+    const email = localStorage.getItem('backupEmail') || '';
+    const last = localStorage.getItem('lastBackupDate');
+    const due = new Date().getDate() >= BACKUP_DAY && localStorage.getItem('lastBackupMonth') !== currentMonthKey();
+    const snoozed = localStorage.getItem('backupSnoozeDate') === todayIso();
+    if (banner) {
+      banner.style.display = due && !snoozed && getLogs().length ? 'block' : 'none';
+      el('backupBannerText').textContent = email
+        ? `C'est le moment d'envoyer la sauvegarde de tes notes à ${email}. Choisis Gmail dans le menu qui s'ouvre, puis colle l'adresse dans « À ».`
+        : "C'est le moment d'envoyer la sauvegarde de tes notes. Indique ton adresse e-mail dans la Configuration, tout en bas.";
+    }
+    const status = el('backupStatus');
+    if (status) {
+      status.textContent = (last ? `Dernière sauvegarde envoyée le ${fmtDate(last)}. ` : 'Aucune sauvegarde envoyée pour l\'instant. ') +
+        'Le fichier contient toutes tes notes : ne l\'envoie qu\'à toi.';
+    }
+  }
+
+  async function sendMonthlyBackup() {
+    const email = (el('backupEmail').value || localStorage.getItem('backupEmail') || '').trim();
+    if (email) store('backupEmail', email);
+    const text = buildBackupText();
+    const name = `live-longer-sauvegarde-${todayIso()}.txt`;
+    const subject = `Sauvegarde Live longer du ${fmtDate(todayIso())}`;
+    if (email && navigator.clipboard) { try { await navigator.clipboard.writeText(email); } catch (e) { /* pas grave */ } }
+
+    // 1) Menu « Partager » du téléphone avec le fichier en pièce jointe (Android, iPhone)
+    try {
+      const file = new File([text], name, { type: 'text/plain' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: subject, text: email ? `${subject} — à envoyer à ${email}` : subject });
+        markBackupSent();
+        showToast(email ? `📧 Adresse copiée : colle-la dans « À »` : '📧 Sauvegarde partagée');
+        return;
+      }
+    } catch (e) {
+      if (e && e.name === 'AbortError') return; // partage annulé
+    }
+
+    // 2) Sinon (ordinateur) : téléchargement du fichier + brouillon d'e-mail à compléter avec la pièce jointe
+    const blob = new Blob([text], { type: 'text/plain' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    if (email) {
+      const body = `Sauvegarde mensuelle de Live longer.\nJoins le fichier ${name} qui vient d'être téléchargé.\nPour la restaurer : Configuration > Importer.`;
+      location.href = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    }
+    markBackupSent();
+    showToast('💾 Fichier de sauvegarde téléchargé');
+  }
+
   function importData() { el('importFileInput').click(); }
 
   function processImportFile(event) {
@@ -2047,6 +2158,7 @@
     el('crisisNote').addEventListener('input', () => scheduleAutoSave());
     ['prefChocolat', 'prefPlat', 'prefBoisson'].forEach(id => el(id).addEventListener('input', scheduleSettingsSave));
     el('cycleLength').addEventListener('input', scheduleSettingsSave);
+    el('backupEmail').addEventListener('change', e => { store('backupEmail', e.target.value.trim()); updateBackupUI(); showToast('✅ Adresse enregistrée sur ce téléphone'); });
 
     el('pinAttempt').addEventListener('keyup', e => {
       if (e.key === 'Enter' || e.target.value.length === 4) checkPin();

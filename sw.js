@@ -1,6 +1,6 @@
 // Service worker : permet d'installer l'app et de l'ouvrir sans internet.
 // Change CACHE_VERSION à chaque mise à jour de index.html pour forcer le rafraîchissement.
-const CACHE_VERSION = 'copilote-v15-7';
+const CACHE_VERSION = 'copilote-v15-8';
 const CORE = [
   './',
   './index.html',
