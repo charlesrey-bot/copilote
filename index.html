@@ -210,6 +210,10 @@
     details.older-logs { margin-top: 10px; border: 1px solid var(--border); border-radius: 10px; padding: 0 10px; }
     details.older-logs summary { cursor: pointer; padding: 10px 0; font-weight: bold; color: var(--subtext); list-style-position: inside; }
     details.older-logs[open] summary { border-bottom: 1px solid var(--border); }
+    details.events-dropdown { border: 1px solid var(--border); border-radius: 12px; padding: 0 12px; margin-top: 10px; background: var(--input-bg); }
+    details.events-dropdown summary { cursor: pointer; padding: 12px 0; font-weight: bold; font-size: 0.95rem; list-style-position: inside; }
+    details.events-dropdown[open] summary { border-bottom: 1px solid var(--border); }
+    .events-count { font-weight: normal; font-size: 0.8rem; color: var(--subtext); margin-left: 4px; }
     .fe-month { font-weight: bold; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--subtext); margin: 12px 0 4px; }
     .fe-line { display: flex; gap: 8px; align-items: baseline; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 0.88rem; color: var(--text); text-decoration: none; }
     .fe-line:last-child { border-bottom: none; }
@@ -647,11 +651,17 @@
     <div id="settingsStatus" class="autosave-status">💾 Les réglages sont aussi enregistrés automatiquement à chaque changement.</div>
   </div>
 
-  <!-- 10. SORTIES EN FAMILLE (manifestations datées autour de L'Isle VD) -->
+  <!-- 10. SORTIES : deux listes déroulantes (enfants / adultes), fermées par défaut -->
   <div class="card" id="cardFamilyEvents">
-    <h2>🎈 Sorties en famille – région de L'Isle (VD)</h2>
-    <p style="font-size:0.8rem; color:var(--subtext); margin-top:0;">Manifestations datées pour les petits (1 et 4 ans), avec la distance depuis L'Isle. Touche une ligne pour ouvrir la page de l'événement.</p>
-    <div id="familyEventsList"></div>
+    <h2>📅 Sorties dans la région de L'Isle (VD)</h2>
+    <details class="events-dropdown">
+      <summary>👶 Avec les enfants (1 et 4 ans) <span class="events-count" id="kidsEventsCount"></span></summary>
+      <div id="kidsEventsList"></div>
+    </details>
+    <details class="events-dropdown">
+      <summary>🍷 Entre adultes <span class="events-count" id="adultEventsCount"></span></summary>
+      <div id="adultEventsList"></div>
+    </details>
     <p class="scene-caption" id="familyEventsFooter"></p>
   </div>
 
@@ -1407,12 +1417,14 @@
     if (field && document.activeElement !== field) field.value = value;
   }
 
-  /* ---------- Sorties en famille : manifestations datées (pas les activités permanentes) ----------
-     Liste recherchée le 22.10.2026 dans les agendas publics (kidora.ch, agenda-romand.ch,
-     tempslibre.ch, leprogramme.ch, offices du tourisme). Les dates passées disparaissent toutes seules.
+  /* ---------- Sorties : deux listes déroulantes de manifestations datées (pas d'activités permanentes) ----------
+     Recherchées le 22.10.2026 dans les agendas publics (kidora.ch, agenda-romand.ch, tempslibre.ch,
+     vd.leprogramme.ch, beausobre.ch, offices du tourisme). Chaque liste montre les 2 prochains mois
+     (fenêtre glissante) ; les événements passés disparaissent seuls.
      confirmed:false = date annoncée mais pas encore confirmée par l'organisateur. */
-  const FAMILY_EVENTS_UPDATED = '2026-10-22';
-  const FAMILY_EVENTS = [
+  const EVENTS_UPDATED = '2026-10-22';
+  const EVENTS_WINDOW_DAYS = 61; // 2 mois
+  const KIDS_EVENTS = [
     { start: '2026-10-28', title: '🎷 Concert parents-enfants (jazz, gratuit)', place: 'Lausanne, Casino de Montbenon', km: 30, url: 'https://tempslibre.ch/vaud/concerts/454089-concert-parents-enfants-natan-niddam-friends' },
     { start: '2026-10-31', title: '🎃 Halloween au château : courges à sculpter, contes, cirque (15h-22h)', place: 'Morges, Château', km: 20, url: 'https://kidora.ch/evenements/halloween-au-chateau-de-morges' },
     { start: '2026-10-31', title: '🎃 Halloween : bricolage 16h, chasse aux bonbons 17h30, soupe à la courge', place: 'Le Pont, Vallée de Joux', km: 15, url: 'https://kidora.ch/evenements/halloween-le-pont-10-31' },
@@ -1422,6 +1434,7 @@
     { start: '2026-11-20', end: '2026-12-31', title: '🎄 Bô Noël : marchés de Noël en ville (fermé le 25)', place: 'Lausanne, centre', km: 30, url: 'https://www.lausanne-tourisme.ch/en/event/bo-noel-lausanne-marches-de-noel/' },
     { start: '2026-11-20', end: '2026-12-24', title: '🎅 Montreux Noël : le Père Noël vole au-dessus des quais (17h, 18h, 19h)', place: 'Montreux, quais', km: 55, url: 'https://kidora.ch/guide/marches-de-noel-suisse-romande' },
     { start: '2026-11-20', end: '2026-12-24', title: '🚂 Maison du Père Noël, en train à crémaillère', place: 'Montreux, Rochers-de-Naye', km: 55, url: 'https://agenda-romand.ch/marches-de-noel-vaud/' },
+    { start: '2026-11-22', title: '⛵ « Un bateau » : marionnettes et musique dès 3 ans (11h, complet : liste d\'attente)', place: 'Morges, Théâtre de Beausobre', km: 20, url: 'https://beausobre.ch/spectacles/un-bateau/' },
     { start: '2026-11-28', title: "🕯️ Atelier en famille : couronne de l'Avent", place: 'Prangins, Château (Musée national)', km: 35, url: 'https://www.tempslibre.ch/vaud/juniors-spectacles' },
     { start: '2026-11-28', title: '🎄 Marché de Noël de Bière', place: 'Bière', km: 10, url: 'https://agenda-romand.ch/marches-de-noel-vaud/', confirmed: false },
     { start: '2026-11-28', end: '2026-12-13', title: "🏰 Noël médiéval au château (3 week-ends de l'Avent)", place: 'Veytaux, Château de Chillon', km: 60, url: 'https://agenda-romand.ch/marches-de-noel-vaud/' },
@@ -1434,39 +1447,74 @@
     { start: '2026-12-19', title: "🎅 Aubon'Noël : village de Noël et arrivée du Père Noël", place: 'Aubonne, Château', km: 15, url: 'https://agenda-romand.ch/marches-de-noel-vaud/', confirmed: false },
     { start: '2027-01-16', end: '2027-01-24', title: "🎭 « Toi M'aimes ! » spectacle dès 2 ans", place: 'Lausanne, Le Petit Théâtre', km: 30, url: 'https://lepetittheatre.ch/' }
   ];
+  const ADULT_EVENTS = [
+    { start: '2026-10-24', title: '🗝️ « La nuit des dernières clés » au château', place: 'La Sarraz, Château', km: 8, url: 'https://tempslibre.ch/vaud/manifestations/454268-la-nuit-des-derni-res-cl-s-au-ch-teau-de-la-sarraz' },
+    { start: '2026-10-24', title: '🎺 Le Kiosque à Musiques : 30 ans des Rencontres Musicales (gratuit)', place: 'Le Sentier, Temple', km: 20, url: 'https://tempslibre.ch/vaud/manifestations/454402-les-rencontres-musicales-accueillent-le-kiosque-musiques' },
+    { start: '2026-10-29', title: '🎭 « L\'expérience théâtrale » (comédie, 20h)', place: 'Morges, Théâtre de Beausobre', km: 20, url: 'https://beausobre.ch/spectacles/lexperience-theatrale/' },
+    { start: '2026-10-31', title: '🎸 Asaf Avidan en concert (19h)', place: 'Morges, Théâtre de Beausobre', km: 20, url: 'https://beausobre.ch/spectacles/asaf-avidan-2/' },
+    { start: '2026-11-04', title: '🍷 Soirée Truffe & La Spinetta (dégustation)', place: 'Tolochenaz, Cave de La Côte', km: 20, url: 'https://cavedelacote.ch/agenda' },
+    { start: '2026-11-07', end: '2026-11-08', title: '🍇 Caves ouvertes « À la découverte du bourru » (navettes gratuites depuis Gland)', place: 'Begnins, Luins, Vinzel, Bursins', km: 30, url: 'https://cave-du-fort.ch/agenda' },
+    { start: '2026-11-11', end: '2026-11-19', title: '😂 Montreux Comedy Festival', place: 'Lausanne (Beaulieu) et Montreux', km: 30, url: 'https://lausanne.evous.ch/salons/novembre' },
+    { start: '2026-11-12', title: '😂 Blaise Bersinger « Tchoutchou.mp3 » (humour, 20h)', place: 'Morges, Théâtre de Beausobre', km: 20, url: 'https://beausobre.ch/spectacles/blaise-bersinger/' },
+    { start: '2026-11-18', title: '🍄 Atelier truffe et vins (16h, CHF 75)', place: 'Mont-sur-Rolle, Maison des Vins de La Côte', km: 30, url: 'https://maisondesvins.ch/en/home/' },
+    { start: '2026-11-21', title: '🎤 Solann « Si on sombre » (concert, 19h)', place: 'Morges, Théâtre de Beausobre', km: 20, url: 'https://beausobre.ch/spectacles/solann/' },
+    { start: '2026-11-27', end: '2026-11-29', title: '🎭 « La Veuve » (comédie, théâtre d\'objets)', place: 'Morges, Théâtre de Beausobre', km: 20, url: 'https://beausobre.ch/spectacles/la-veuve/' },
+    { start: '2026-12-02', end: '2026-12-20', title: '🍷 Marché de Noël au château : vin chaud et artisans', place: 'Morges, Château', km: 20, url: 'https://www.morges-tourisme.ch/en/events/christmas-market-in-the-castle-of-morges/' },
+    { start: '2026-12-04', end: '2026-12-06', title: '🎨 Les Urbaines : festival d\'art et de musique (gratuit)', place: 'Lausanne, Renens, Chavannes', km: 30, url: 'https://lausanne-tourisme.ch/en/event/les-urbaines' },
+    { start: '2026-12-05', title: '😂 Philippe Caverivière (humour, 19h)', place: 'Morges, Théâtre de Beausobre', km: 20, url: 'https://beausobre.ch/spectacles/philippe-caveriviere/' },
+    { start: '2026-12-09', end: '2026-12-13', title: '🫕 Le Sentier de Noël : 30 chalets, cantine fondue', place: 'Le Sentier, Vallée de Joux', km: 20, url: 'https://www.j3l.ch/en/P106252/things-to-do/events/market/le-sentier-de-noel' },
+    { start: '2026-12-17', title: '🎸 Lynda Lemay et Jean-Félix Lalanne (20h)', place: 'Morges, Théâtre de Beausobre', km: 20, url: 'https://beausobre.ch/spectacles/lynda-lemay-et-jean-felix-lalanne/' },
+    { start: '2026-12-21', title: '🎭 Un soir avec Pierre Arditi (20h)', place: 'Morges, Théâtre de Beausobre', km: 20, url: 'https://beausobre.ch/spectacles/un-soir-avec-pierre-arditi/' }
+  ];
 
   function fmtShortDate(iso) {
     return parseIso(iso).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }).replace(/\.$/, '');
   }
 
-  function renderFamilyEvents() {
-    const list = el('familyEventsList');
+  // Événements en cours ou qui commencent dans les 2 prochains mois
+  function eventsInWindow(events) {
+    const today = todayIso();
+    const limit = addDays(today, EVENTS_WINDOW_DAYS);
+    const shown = e => (e.start < today ? today : e.start);
+    return events
+      .filter(e => (e.end || e.start) >= today && e.start <= limit)
+      .sort((a, b) => shown(a).localeCompare(shown(b)) || a.km - b.km);
+  }
+
+  function renderEventList(listId, countId, events) {
+    const list = el(listId);
     if (!list) return;
     const today = todayIso();
-    const shown = e => (e.start < today ? today : e.start);
-    const upcoming = FAMILY_EVENTS
-      .filter(e => (e.end || e.start) >= today)
-      .sort((a, b) => shown(a).localeCompare(shown(b)) || a.km - b.km);
-
+    const upcoming = eventsInWindow(events);
+    el(countId).textContent = upcoming.length ? `${upcoming.length} sortie${upcoming.length > 1 ? 's' : ''}` : 'liste à mettre à jour';
     if (!upcoming.length) {
-      list.innerHTML = "<p style='color:var(--subtext);'>Plus de sorties dans la liste : demande une mise à jour.</p>";
-    } else {
-      let month = '';
-      list.innerHTML = upcoming.map(e => {
-        const m = parseIso(shown(e)).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
-        const head = m !== month ? `<div class="fe-month">${esc(m)}</div>` : '';
-        month = m;
-        const ongoing = e.start <= today && (e.end || e.start) >= today;
-        const date = e.end ? `${fmtShortDate(e.start)} → ${fmtShortDate(e.end)}` : fmtShortDate(e.start);
-        const tags = (ongoing ? '<span class="fe-tag now">en cours</span>' : '') +
-          (e.confirmed === false ? '<span class="fe-tag tbc">date à confirmer</span>' : '');
-        return `${head}<a class="fe-line" href="${esc(e.url)}" target="_blank" rel="noopener">
-          <span class="fe-date">${esc(date)}</span>
-          <span class="fe-text">${esc(e.title)}${tags}<br><span class="fe-place">📍 ${esc(e.place)} · ${e.km} km</span></span>
-        </a>`;
-      }).join('');
+      list.innerHTML = "<p style='color:var(--subtext);'>Plus de sorties pour les 2 prochains mois dans la liste : demande une mise à jour.</p>";
+      return;
     }
-    el('familyEventsFooter').textContent = `Liste établie le ${fmtDate(FAMILY_EVENTS_UPDATED)} à partir des agendas publics. Vérifie l'horaire sur la page de l'événement avant de partir.`;
+    let month = '';
+    list.innerHTML = upcoming.map(e => {
+      const shownStart = e.start < today ? today : e.start;
+      const m = parseIso(shownStart).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+      const head = m !== month ? `<div class="fe-month">${esc(m)}</div>` : '';
+      month = m;
+      const ongoing = e.start <= today && (e.end || e.start) >= today;
+      const date = e.end ? `${fmtShortDate(e.start)} → ${fmtShortDate(e.end)}` : fmtShortDate(e.start);
+      const tags = (ongoing ? '<span class="fe-tag now">en cours</span>' : '') +
+        (e.confirmed === false ? '<span class="fe-tag tbc">date à confirmer</span>' : '');
+      return `${head}<a class="fe-line" href="${esc(e.url)}" target="_blank" rel="noopener">
+        <span class="fe-date">${esc(date)}</span>
+        <span class="fe-text">${esc(e.title)}${tags}<br><span class="fe-place">📍 ${esc(e.place)} · ${e.km} km</span></span>
+      </a>`;
+    }).join('');
+  }
+
+  function renderFamilyEvents() {
+    renderEventList('kidsEventsList', 'kidsEventsCount', KIDS_EVENTS);
+    renderEventList('adultEventsList', 'adultEventsCount', ADULT_EVENTS);
+    const footer = el('familyEventsFooter');
+    if (footer) {
+      footer.textContent = `Les 2 prochains mois. Listes établies le ${fmtDate(EVENTS_UPDATED)} à partir des agendas publics : vérifie l'horaire sur la page de l'événement avant de partir.`;
+    }
   }
 
   function updateDashboard() {
