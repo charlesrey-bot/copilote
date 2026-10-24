@@ -210,6 +210,28 @@
     details.older-logs { margin-top: 10px; border: 1px solid var(--border); border-radius: 10px; padding: 0 10px; }
     details.older-logs summary { cursor: pointer; padding: 10px 0; font-weight: bold; color: var(--subtext); list-style-position: inside; }
     details.older-logs[open] summary { border-bottom: 1px solid var(--border); }
+    /* ===== Page 2 : suivi du poids ===== */
+    #pageBtn { background: #00b894; color: #fff; border-color: #00b894; font-weight: bold; }
+    #pageBtn.on-weight { background: #6c5ce7; border-color: #6c5ce7; }
+    .w-entry { display: flex; flex-wrap: wrap; gap: 14px; }
+    .w-form { flex: 1 1 220px; }
+    .w-last { flex: 1 1 200px; background: rgba(0, 184, 148, 0.07); border: 1px solid rgba(0, 184, 148, 0.25); border-radius: 12px; padding: 10px; }
+    .w-last-head { font-weight: bold; font-size: 1.05rem; }
+    .w-spark { position: relative; height: 90px; margin: 6px 0; }
+    .w-deltas { font-size: 0.82rem; line-height: 1.5; }
+    .w-down { color: #00a37a; font-weight: bold; }
+    .w-up { color: #d63031; font-weight: bold; }
+    .w-progress { height: 14px; border-radius: 7px; background: rgba(0,0,0,0.08); overflow: hidden; }
+    .w-progress-bar { height: 100%; width: 0; background: linear-gradient(90deg, #00b894, #55efc4); transition: width 0.6s ease; }
+    .w-row { display: flex; align-items: baseline; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 0.88rem; }
+    .w-row:last-child { border-bottom: none; }
+    .w-row .w-date { flex: 0 0 92px; color: var(--subtext); font-size: 0.82rem; }
+    .w-row .w-kg { flex: 0 0 64px; font-weight: bold; }
+    .w-row .w-txt { flex: 1; min-width: 0; color: var(--subtext); font-size: 0.8rem; }
+    .w-tips { padding-left: 18px; font-size: 0.88rem; line-height: 1.5; }
+    .w-tips li { margin-bottom: 6px; }
+    .chip.done { background: #00b894; color: #fff; border-color: #00b894; cursor: default; }
+    .chip.todo { cursor: default; opacity: 0.65; }
     details.events-dropdown { border: 1px solid var(--border); border-radius: 12px; padding: 0 12px; margin-top: 10px; background: var(--input-bg); }
     details.events-dropdown summary { cursor: pointer; padding: 12px 0; font-weight: bold; font-size: 0.95rem; list-style-position: inside; }
     details.journal-dropdown summary { font-size: 1.1rem; }
@@ -409,12 +431,16 @@
   <div class="header-bar">
     <div class="header-title" id="headerTitle">🛡️ Live free or Die hard</div>
     <div style="display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end;">
+      <button class="btn-icon" onclick="togglePage()" id="pageBtn" title="Ouvrir le suivi du poids">⚖️ Poids</button>
       <button class="btn-icon" onclick="toggleStealthMode()" id="stealthBtn" title="Camouflage">🥷 Masquer</button>
       <button class="btn-sos" onclick="openSosModal()" id="sosBtn" style="font-size:0.8rem;">🚨 SOS</button>
       <button class="btn-icon" onclick="toggleDarkMode()" id="darkToggleBtn">🌙 Mode</button>
       <button class="btn-icon" onclick="lockAppNow()" id="lockBtn" style="display:none;">🔒</button>
     </div>
   </div>
+
+  <!-- ===================== PAGE 1 : GUIDE DU JOUR ===================== -->
+  <div id="pageMain">
 
   <!-- ALARME INTELLIGENTE PREVENTIVE J-2 -->
   <div id="alarmBanner" class="alarm-box" style="display:none;">
@@ -684,6 +710,101 @@
     <button class="btn-primary" onclick="saveSettingsNow()" style="margin-top: 15px; font-size:1rem;">💾 Enregistrer la configuration</button>
     <div id="settingsStatus" class="autosave-status">💾 Les réglages sont aussi enregistrés automatiquement à chaque changement.</div>
   </div>
+
+  </div><!-- fin #pageMain -->
+
+<!-- ===================== PAGE 2 : SUIVI DU POIDS ===================== -->
+<div id="pageWeight" style="display:none;">
+
+  <div id="weightReminder" class="alarm-box" style="display:none; border-left-color:#00b894;">
+    <strong>⚖️ Pesée du jour</strong>
+    <div style="margin-top:4px;">Tu n'as pas encore noté ton poids aujourd'hui. Le matin à jeun, c'est le plus fiable.</div>
+  </div>
+
+  <!-- Saisie + mini-graphique à côté -->
+  <div class="card">
+    <h2>⚖️ Poids du jour</h2>
+    <div class="w-entry">
+      <div class="w-form">
+        <label style="margin-top:0;">Date :</label>
+        <input type="date" id="wDate">
+        <label>Poids (kg) :</label>
+        <input type="number" id="wKg" step="0.1" min="30" max="300" inputmode="decimal" placeholder="ex. 102.4">
+        <label>Note (facultatif) :</label>
+        <input type="text" id="wNote" placeholder="ex. resto hier soir, sport, mal dormi…">
+        <button class="btn-primary" onclick="saveWeight()" style="background:#00b894;">✅ Enregistrer mon poids</button>
+      </div>
+      <div class="w-last">
+        <div class="w-last-head" id="wLastHead">Aucune pesée pour l'instant</div>
+        <div class="w-spark"><canvas id="wSpark"></canvas></div>
+        <div id="wLastDeltas" class="w-deltas"></div>
+      </div>
+    </div>
+    <p class="scene-caption">💡 Pèse-toi chaque matin au réveil, après les toilettes et avant de manger, sur la même balance : c'est la mesure la plus comparable d'un jour à l'autre.</p>
+  </div>
+
+  <!-- Objectif et progression -->
+  <div class="card">
+    <h2>🎯 Objectif : <span id="wGoalTitle">95 kg</span></h2>
+    <div class="w-progress"><div class="w-progress-bar" id="wProgressBar"></div></div>
+    <div id="wProgressText" class="scene-caption" style="margin-top:6px;"></div>
+    <div class="stat-badge-grid" id="wStats"></div>
+    <div id="wVerdict" class="advice-box" style="margin-top:12px;"></div>
+  </div>
+
+  <!-- Graphique complet -->
+  <div class="card">
+    <h2>📈 Ma courbe</h2>
+    <div class="chart-container" style="height:270px;"><canvas id="wChart"></canvas></div>
+    <p class="scene-caption">Points : pesées · trait vert : moyenne sur 7 jours · pointillés gris : chemin prévu jusqu'à l'objectif · pointillés violets : où mène la tendance actuelle · ligne rouge : objectif.</p>
+  </div>
+
+  <!-- Paliers -->
+  <div class="card">
+    <h2>🏅 Paliers</h2>
+    <div id="wMilestones" class="chips-group"></div>
+  </div>
+
+  <!-- Historique -->
+  <div class="card">
+    <details class="events-dropdown journal-dropdown">
+      <summary>📋 Historique des pesées <span class="events-count" id="wCount"></span></summary>
+      <div id="wHistory"></div>
+    </details>
+  </div>
+
+  <!-- Conseils -->
+  <div class="card">
+    <details class="events-dropdown journal-dropdown">
+      <summary>💡 Conseils pour tenir l'objectif</summary>
+      <ul class="w-tips">
+        <li><strong>Rythme sain : 0,5 à 1 kg par semaine.</strong> Plus vite, on perd aussi du muscle et on reprend plus facilement.</li>
+        <li><strong>Regarde la moyenne sur 7 jours, pas le chiffre du jour.</strong> L'eau, le sel, un repas tardif font varier le poids de 1 à 2 kg d'un jour à l'autre.</li>
+        <li><strong>Des protéines à chaque repas</strong> (viande, poisson, œufs, yaourt nature, fromage blanc, légumineuses) : elles calent et protègent les muscles.</li>
+        <li><strong>La moitié de l'assiette en légumes</strong>, et les calories les plus faciles à couper : boissons sucrées, alcool, grignotage du soir.</li>
+        <li><strong>Bouger tous les jours</strong> : viser 8 000 à 10 000 pas, et 2 séances de renforcement musculaire par semaine.</li>
+        <li><strong>Dormir 7 heures ou plus</strong> : le manque de sommeil augmente la faim.</li>
+        <li><strong>Un plateau de 2 à 3 semaines est normal.</strong> Si la moyenne ne baisse plus pendant 3 semaines, réduis un peu les portions ou ajoute de la marche.</li>
+        <li>En cas de traitement ou de problème de santé, demande l'avis de ton médecin avant de changer ton alimentation.</li>
+      </ul>
+    </details>
+  </div>
+
+  <!-- Réglages de l'objectif -->
+  <div class="card config-card">
+    <h2>⚙️ Réglages de l'objectif</h2>
+    <label>Poids objectif (kg) :</label>
+    <input type="number" id="wTargetKg" step="0.5" min="30" max="300" inputmode="decimal">
+    <label>Date de départ :</label>
+    <input type="date" id="wStartDate">
+    <label>Date visée (5 mois après le départ par défaut) :</label>
+    <input type="date" id="wTargetDate">
+    <label>Taille en cm (facultatif, pour l'IMC) :</label>
+    <input type="number" id="wHeight" step="1" min="120" max="230" inputmode="numeric" placeholder="ex. 182">
+    <button class="btn-primary" onclick="saveWeightGoal()">💾 Enregistrer l'objectif</button>
+    <p class="scene-caption">Les pesées sont enregistrées sur ce téléphone et incluses dans la sauvegarde mensuelle.</p>
+  </div>
+</div>
 
 </div>
 <div id="toast" class="toast"></div>
@@ -1538,8 +1659,388 @@
     }
   }
 
+  /* =====================================================================
+     PAGE 2 : SUIVI DU POIDS
+     Une pesée par jour (la dernière saisie d'un jour remplace la précédente).
+     Objectif par défaut : 95 kg, 5 mois après la première pesée (modifiable).
+     Clés localStorage : weightLogs = [{date, kg, note}], weightGoal = {targetKg, startDate, targetDate, heightCm}
+     ===================================================================== */
+  const WEIGHT_KEY = 'weightLogs';
+  const WGOAL_KEY = 'weightGoal';
+  const DEFAULT_TARGET_KG = 95;
+  const DEFAULT_MONTHS = 5;
+  let currentPage = 'main';
+  let wChartInstance = null;
+  let wSparkInstance = null;
+
+  function round1(x) { return Math.round(x * 10) / 10; }
+  function fmtKg(x) { return (x === null || x === undefined || !isFinite(x)) ? '—' : `${round1(x).toFixed(1)} kg`; }
+  function fmtSigned(x) { return `${x > 0 ? '+' : x < 0 ? '−' : '±'}${Math.abs(round1(x)).toFixed(1)} kg`; }
+  function deltaHtml(x) {
+    if (x === null || x === undefined || !isFinite(x)) return '—';
+    return `<span class="${x < 0 ? 'w-down' : x > 0 ? 'w-up' : ''}">${fmtSigned(x)}</span>`;
+  }
+
+  function addMonths(iso, n) {
+    const d = parseIso(iso);
+    const day = d.getDate();
+    d.setMonth(d.getMonth() + n);
+    if (d.getDate() < day) d.setDate(0); // 31 janv. + 1 mois = fin février
+    return toIso(d);
+  }
+
+  function getWeights() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(WEIGHT_KEY) || '[]');
+      if (!Array.isArray(raw)) return [];
+      return raw
+        .filter(w => w && ISO_RE.test(w.date || '') && isFinite(parseFloat(w.kg)))
+        .map(w => ({ date: w.date, kg: parseFloat(w.kg), note: w.note || '' }))
+        .sort((a, b) => a.date.localeCompare(b.date));
+    } catch (e) { return []; }
+  }
+  function setWeights(list) {
+    list.sort((a, b) => a.date.localeCompare(b.date));
+    return store(WEIGHT_KEY, JSON.stringify(list));
+  }
+
+  function getWeightGoal() {
+    let g = {};
+    try { g = JSON.parse(localStorage.getItem(WGOAL_KEY) || '{}') || {}; } catch (e) { g = {}; }
+    const ws = getWeights();
+    const startDate = ISO_RE.test(g.startDate || '') ? g.startDate : (ws[0] ? ws[0].date : todayIso());
+    return {
+      targetKg: parseFloat(g.targetKg) || DEFAULT_TARGET_KG,
+      startDate: startDate,
+      targetDate: ISO_RE.test(g.targetDate || '') ? g.targetDate : addMonths(startDate, DEFAULT_MONTHS),
+      heightCm: parseFloat(g.heightCm) || null
+    };
+  }
+
+  // Moyenne des pesées des 7 derniers jours se terminant à `date`
+  function avg7(ws, date) {
+    const from = addDays(date, -6);
+    const sel = ws.filter(w => w.date >= from && w.date <= date);
+    return sel.length ? sel.reduce((s, w) => s + w.kg, 0) / sel.length : null;
+  }
+
+  // Tendance en kg par jour : régression linéaire sur les 21 derniers jours (au moins 5 pesées sur 7 jours)
+  function trendPerDay(ws) {
+    if (!ws.length) return null;
+    const last = ws[ws.length - 1].date;
+    const sel = ws.filter(w => w.date >= addDays(last, -20));
+    if (sel.length < 5 || daysBetween(sel[0].date, last) < 7) return null;
+    const xs = sel.map(w => daysBetween(sel[0].date, w.date));
+    const ys = sel.map(w => w.kg);
+    const mx = xs.reduce((a, b) => a + b, 0) / xs.length;
+    const my = ys.reduce((a, b) => a + b, 0) / ys.length;
+    let num = 0, den = 0;
+    xs.forEach((x, i) => { num += (x - mx) * (ys[i] - my); den += (x - mx) * (x - mx); });
+    return den ? num / den : null;
+  }
+
+  function startWeight(ws, goal) {
+    const fromStart = ws.find(w => w.date >= goal.startDate);
+    return (fromStart || ws[0] || {}).kg ?? null;
+  }
+
+  // Nombre de jours d'affilée avec une pesée, jusqu'à aujourd'hui (ou hier si pas encore pesé aujourd'hui)
+  function weighStreak(ws) {
+    const days = new Set(ws.map(w => w.date));
+    let d = days.has(todayIso()) ? todayIso() : addDays(todayIso(), -1);
+    let n = 0;
+    while (days.has(d)) { n++; d = addDays(d, -1); }
+    return n;
+  }
+
+  function computeWeightStats() {
+    const ws = getWeights();
+    const goal = getWeightGoal();
+    if (!ws.length) return { ws, goal, empty: true };
+    const today = todayIso();
+    const last = ws[ws.length - 1];
+    const startKg = startWeight(ws, goal);
+    const current = avg7(ws, last.date);
+    const slope = trendPerDay(ws);
+    const lost = startKg - current;
+    const remaining = Math.max(0, current - goal.targetKg);
+    const totalToLose = Math.max(0.1, startKg - goal.targetKg);
+    const daysLeft = daysBetween(today, goal.targetDate);
+    const weeksLeft = daysLeft / 7;
+    const neededPerWeek = weeksLeft > 0 ? remaining / weeksLeft : null;
+    const totalDays = Math.max(1, daysBetween(goal.startDate, goal.targetDate));
+    const idealToday = startKg - (startKg - goal.targetKg) * Math.min(1, Math.max(0, daysBetween(goal.startDate, today) / totalDays));
+    let eta = null;
+    if (slope !== null && slope < -0.005 && remaining > 0) eta = addDays(last.date, Math.ceil(remaining / -slope));
+    const minKg = Math.min(...ws.map(w => w.kg));
+    return {
+      ws, goal, empty: false, last, startKg, current, slope, lost, remaining, totalToLose,
+      daysLeft, neededPerWeek, idealToday, eta, minKg,
+      progress: Math.max(0, Math.min(1, lost / totalToLose)),
+      bmi: goal.heightCm ? current / Math.pow(goal.heightCm / 100, 2) : null,
+      streak: weighStreak(ws)
+    };
+  }
+
+  function statCard(value, label, color) {
+    return `<div class="stat-card"><div class="stat-number"${color ? ` style="color:${color};"` : ''}>${value}</div><div class="stat-label">${label}</div></div>`;
+  }
+
+  function renderWeightPage() {
+    if (!el('pageWeight')) return;
+    const st = computeWeightStats();
+    const goal = st.goal;
+    el('wGoalTitle').textContent = `${round1(goal.targetKg)} kg le ${fmtDate(goal.targetDate)}`;
+    if (!el('wDate').value) el('wDate').value = todayIso();
+    setFieldIfIdle('wTargetKg', round1(goal.targetKg));
+    setFieldIfIdle('wStartDate', goal.startDate);
+    setFieldIfIdle('wTargetDate', goal.targetDate);
+    setFieldIfIdle('wHeight', goal.heightCm || '');
+
+    const weighedToday = st.ws.some(w => w.date === todayIso());
+    el('weightReminder').style.display = weighedToday ? 'none' : 'block';
+    el('wCount').textContent = `${st.ws.length} pesée${st.ws.length > 1 ? 's' : ''}`;
+
+    if (st.empty) {
+      el('wLastHead').textContent = "Aucune pesée pour l'instant";
+      el('wLastDeltas').innerHTML = 'Entre ton poids de ce matin : le graphique apparaîtra ici.';
+      el('wProgressBar').style.width = '0%';
+      el('wProgressText').textContent = '';
+      el('wStats').innerHTML = '';
+      el('wVerdict').innerHTML = `🚀 Entre ta première pesée pour démarrer. L'objectif sera <strong>${round1(goal.targetKg)} kg</strong> dans 5 mois, soit le <strong>${fmtDate(addMonths(todayIso(), DEFAULT_MONTHS))}</strong> (modifiable en bas de la page).`;
+      el('wMilestones').innerHTML = '';
+      el('wHistory').innerHTML = "<p style='color:var(--subtext);'>Aucune pesée enregistrée.</p>";
+      drawWeightCharts(st);
+      return;
+    }
+
+    // --- dernière pesée + écarts (à côté du mini-graphique)
+    const ws = st.ws;
+    const last = st.last;
+    const prev = ws.length > 1 ? ws[ws.length - 2] : null;
+    const weekAgoAvg = avg7(ws, addDays(last.date, -7));
+    el('wLastHead').textContent = `${fmtKg(last.kg)} · ${fmtDate(last.date)}`;
+    el('wLastDeltas').innerHTML =
+      `vs pesée précédente : ${prev ? deltaHtml(last.kg - prev.kg) : '—'}<br>` +
+      `moyenne 7 j : <strong>${fmtKg(st.current)}</strong> (${weekAgoAvg !== null ? deltaHtml(st.current - weekAgoAvg) + ' en 1 semaine' : 'semaine précédente inconnue'})<br>` +
+      `depuis le départ : ${deltaHtml(st.current - st.startKg)}`;
+
+    // --- progression
+    el('wProgressBar').style.width = `${Math.round(st.progress * 100)}%`;
+    el('wProgressText').textContent = `${Math.round(st.progress * 100)} % du chemin : ${fmtKg(st.startKg)} → ${fmtKg(st.current)} → objectif ${fmtKg(goal.targetKg)}`;
+
+    const lossPerWeek = st.slope !== null ? -st.slope * 7 : null;
+    let tiles = '';
+    tiles += statCard(fmtKg(st.current), 'Poids actuel (moyenne 7 jours)');
+    tiles += statCard(st.lost >= 0 ? `−${round1(st.lost).toFixed(1)} kg` : `+${round1(-st.lost).toFixed(1)} kg`, 'Depuis le départ', st.lost > 0 ? '#00b894' : '#d63031');
+    tiles += statCard(fmtKg(st.remaining), 'Reste à perdre');
+    tiles += statCard(st.daysLeft > 0 ? `${st.daysLeft} j` : 'Échéance passée', `Jusqu'au ${fmtDate(goal.targetDate)}`);
+    tiles += statCard(st.neededPerWeek !== null ? `${round1(st.neededPerWeek).toFixed(1)} kg/sem` : '—', 'Rythme nécessaire');
+    tiles += statCard(lossPerWeek !== null ? `${lossPerWeek >= 0 ? '−' : '+'}${Math.abs(round1(lossPerWeek)).toFixed(1)} kg/sem` : '…', 'Rythme actuel (3 semaines)', lossPerWeek !== null ? (lossPerWeek > 0 ? '#00b894' : '#d63031') : null);
+    tiles += statCard(st.eta ? fmtDate(st.eta) : '—', 'Arrivée à l\'objectif au rythme actuel');
+    tiles += statCard(st.streak ? `🔥 ${st.streak} j` : '0 j', 'Pesées d\'affilée');
+    tiles += statCard(fmtKg(st.minKg), 'Plus bas atteint');
+    if (st.bmi) tiles += statCard(round1(st.bmi).toFixed(1), 'IMC actuel');
+    el('wStats').innerHTML = tiles;
+
+    // --- verdict
+    let v;
+    const behind = st.current - st.idealToday;
+    if (st.remaining <= 0) {
+      v = `🎉 <strong>Objectif atteint !</strong> Ta moyenne sur 7 jours est à ${fmtKg(st.current)}. Pour la suite : garder ce poids pendant quelques semaines avant de fixer un nouvel objectif.`;
+    } else if (st.daysLeft <= 0) {
+      v = `⏰ La date visée est passée. Il reste ${fmtKg(st.remaining)} : choisis une nouvelle date en bas de la page.`;
+    } else if (st.slope === null) {
+      v = `📊 Encore quelques pesées (au moins 5 sur une semaine) et je calcule ta tendance. Pour l'instant, le plan demande <strong>${round1(st.neededPerWeek).toFixed(1)} kg par semaine</strong>.`;
+    } else if (behind <= 0) {
+      v = `✅ <strong>En avance de ${Math.abs(round1(behind)).toFixed(1)} kg</strong> sur le plan. Continue comme ça.`;
+    } else if (behind <= 0.7) {
+      v = `👍 <strong>Dans les clous</strong> (${round1(behind).toFixed(1)} kg au-dessus du plan, c'est dans la variation normale).`;
+    } else {
+      v = `⚠️ <strong>${round1(behind).toFixed(1)} kg au-dessus du plan.</strong> Pour rattraper : ${round1(st.neededPerWeek).toFixed(1)} kg par semaine jusqu'au ${fmtDate(goal.targetDate)}. Pistes simples : supprimer boissons sucrées et alcool en semaine, plus de légumes, une marche de 30 minutes par jour.`;
+    }
+    if (st.neededPerWeek !== null && st.neededPerWeek > 1 && st.remaining > 0 && st.daysLeft > 0) {
+      v += `<br>🩺 Le rythme nécessaire dépasse 1 kg par semaine : c'est ambitieux. Un rythme sain est de 0,5 à 1 kg par semaine ; repousser un peu la date visée est plus durable.`;
+    }
+    if (lossPerWeek !== null && lossPerWeek > 1.2) {
+      v += `<br>🩺 Tu perds plus de 1,2 kg par semaine en ce moment : veille à manger assez de protéines pour garder tes muscles.`;
+    }
+    el('wVerdict').innerHTML = v;
+
+    // --- paliers : chaque kg perdu, la moitié du chemin et l'objectif
+    const steps = [];
+    const totalKg = Math.ceil(st.startKg - goal.targetKg);
+    for (let k = 1; k < totalKg; k++) steps.push({ label: `−${k} kg`, kg: st.startKg - k });
+    steps.push({ label: '½ chemin', kg: st.startKg - (st.startKg - goal.targetKg) / 2 });
+    steps.push({ label: `🎯 ${round1(goal.targetKg)} kg`, kg: goal.targetKg });
+    steps.sort((a, b) => b.kg - a.kg);
+    el('wMilestones').innerHTML = steps.map(s => {
+      const done = st.current <= s.kg + 1e-9;
+      return `<span class="chip ${done ? 'done' : 'todo'}">${done ? '✅ ' : ''}${esc(s.label)}</span>`;
+    }).join('');
+
+    // --- historique (plus récent en premier)
+    el('wHistory').innerHTML = ws.slice().reverse().map((w, i, arr) => {
+      const before = arr[i + 1];
+      return `<div class="w-row">
+        <span class="w-date">${esc(fmtShortDate(w.date))}</span>
+        <span class="w-kg">${fmtKg(w.kg)}</span>
+        <span class="w-txt">${before ? deltaHtml(w.kg - before.kg) : 'départ'}${w.note ? ' · ' + esc(w.note) : ''}</span>
+        <span class="history-actions">
+          <button onclick="editWeight('${esc(w.date)}')" title="Modifier">✏️</button>
+          <button onclick="deleteWeight('${esc(w.date)}')" title="Supprimer">🗑️</button>
+        </span>
+      </div>`;
+    }).join('');
+
+    drawWeightCharts(st);
+  }
+
+  function drawWeightCharts(st) {
+    if (typeof Chart === 'undefined' || currentPage !== 'weight') return;
+    const ws = st.ws;
+    const goal = st.goal;
+
+    // Mini-graphique : les 14 dernières pesées
+    const recent = ws.slice(-14);
+    if (wSparkInstance) wSparkInstance.destroy();
+    wSparkInstance = new Chart(el('wSpark').getContext('2d'), {
+      type: 'line',
+      data: {
+        labels: recent.map(w => fmtShortDate(w.date)),
+        datasets: [{ data: recent.map(w => w.kg), borderColor: '#00b894', backgroundColor: 'rgba(0,184,148,0.12)', fill: true, tension: 0.3, pointRadius: 2.5, borderWidth: 2 }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, animation: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => fmtKg(c.parsed.y) } } },
+        scales: { x: { display: false }, y: { display: true, ticks: { maxTicksLimit: 3, font: { size: 10 } }, grid: { display: false } } }
+      }
+    });
+
+    // Graphique complet : axe en jours depuis le départ
+    const start = goal.startDate;
+    const lastIdx = ws.length ? daysBetween(start, ws[ws.length - 1].date) : 0;
+    const targetIdx = Math.max(1, daysBetween(start, goal.targetDate));
+    const xMax = Math.max(targetIdx, lastIdx) + 3;
+    const xMin = ws.length ? Math.min(0, daysBetween(start, ws[0].date)) : 0;
+    const datasets = [];
+    if (ws.length) {
+      datasets.push({ label: 'Pesée', data: ws.map(w => ({ x: daysBetween(start, w.date), y: w.kg })), showLine: false, pointRadius: 3, pointBackgroundColor: 'rgba(99,110,114,0.75)', borderColor: 'rgba(99,110,114,0.75)' });
+      datasets.push({ label: 'Moyenne 7 jours', data: ws.map(w => ({ x: daysBetween(start, w.date), y: round1(avg7(ws, w.date)) })), borderColor: '#00b894', borderWidth: 3, pointRadius: 0, tension: 0.3 });
+      if (st.startKg !== null) {
+        datasets.push({ label: 'Chemin prévu', data: [{ x: 0, y: st.startKg }, { x: targetIdx, y: goal.targetKg }], borderColor: '#b2bec3', borderDash: [6, 5], borderWidth: 2, pointRadius: 0 });
+      }
+      if (st.slope !== null && st.current !== null) {
+        datasets.push({ label: 'Tendance actuelle', data: [{ x: lastIdx, y: st.current }, { x: targetIdx, y: st.current + st.slope * (targetIdx - lastIdx) }], borderColor: '#6c5ce7', borderDash: [2, 4], borderWidth: 2, pointRadius: 0 });
+      }
+    }
+    datasets.push({ label: 'Objectif', data: [{ x: xMin, y: goal.targetKg }, { x: xMax, y: goal.targetKg }], borderColor: '#e74c3c', borderWidth: 1.5, pointRadius: 0 });
+
+    if (wChartInstance) wChartInstance.destroy();
+    wChartInstance = new Chart(el('wChart').getContext('2d'), {
+      type: 'line',
+      data: { datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false, animation: false, parsing: false,
+        interaction: { mode: 'nearest', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: {
+            title: items => items.length ? fmtDate(addDays(start, Math.round(items[0].parsed.x))) : '',
+            label: c => `${c.dataset.label} : ${fmtKg(c.parsed.y)}`
+          } }
+        },
+        scales: {
+          x: { type: 'linear', min: xMin, max: xMax, ticks: { maxTicksLimit: 6, callback: v => parseIso(addDays(start, Math.round(v))).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) } },
+          y: { ticks: { callback: v => `${v} kg` } }
+        }
+      }
+    });
+  }
+
+  function saveWeight() {
+    const date = el('wDate').value || todayIso();
+    const kg = parseFloat(String(el('wKg').value).replace(',', '.'));
+    if (!isFinite(kg) || kg < 30 || kg > 300) { showToast('⚠️ Entre un poids valide, par ex. 102.4'); el('wKg').focus(); return; }
+    const before = computeWeightStats();
+    const list = getWeights().filter(w => w.date !== date);
+    list.push({ date, kg: round1(kg), note: el('wNote').value.trim() });
+    if (!setWeights(list)) return;
+    // première pesée : l'objectif démarre ce jour-là (95 kg dans 5 mois)
+    if (!localStorage.getItem(WGOAL_KEY)) {
+      store(WGOAL_KEY, JSON.stringify({ targetKg: DEFAULT_TARGET_KG, startDate: date, targetDate: addMonths(date, DEFAULT_MONTHS) }));
+    }
+    el('wKg').value = '';
+    el('wNote').value = '';
+    el('wDate').value = todayIso();
+    const after = computeWeightStats();
+    let msg = `✅ ${fmtKg(kg)} enregistré`;
+    if (!before.empty && kg < before.minKg) msg = `🎉 Nouveau plus bas : ${fmtKg(kg)} !`;
+    if (!before.empty && Math.floor(before.startKg - before.current) < Math.floor(after.startKg - after.current)) {
+      msg = `🏅 Palier atteint : −${Math.floor(after.startKg - after.current)} kg (moyenne 7 jours) !`;
+    }
+    showToast(msg);
+    renderWeightPage();
+    updateWeightButton();
+  }
+
+  function editWeight(date) {
+    const w = getWeights().find(x => x.date === date);
+    if (!w) return;
+    el('wDate').value = w.date;
+    el('wKg').value = w.kg;
+    el('wNote').value = w.note || '';
+    el('wKg').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    showToast('✏️ Corrige puis appuie sur Enregistrer');
+  }
+
+  function deleteWeight(date) {
+    if (!confirm(`Supprimer la pesée du ${fmtDate(date)} ?`)) return;
+    setWeights(getWeights().filter(w => w.date !== date));
+    renderWeightPage();
+    updateWeightButton();
+    showToast('🗑️ Pesée supprimée');
+  }
+
+  function saveWeightGoal() {
+    const targetKg = parseFloat(String(el('wTargetKg').value).replace(',', '.'));
+    const startDate = el('wStartDate').value;
+    const targetDate = el('wTargetDate').value;
+    const heightCm = parseFloat(el('wHeight').value);
+    if (!isFinite(targetKg) || targetKg < 30 || targetKg > 300) { showToast('⚠️ Poids objectif invalide'); return; }
+    if (!startDate || !targetDate || targetDate <= startDate) { showToast('⚠️ La date visée doit être après la date de départ'); return; }
+    store(WGOAL_KEY, JSON.stringify({ targetKg: round1(targetKg), startDate, targetDate, heightCm: isFinite(heightCm) ? heightCm : null }));
+    showToast('✅ Objectif enregistré');
+    renderWeightPage();
+  }
+
+  // Bouton du haut : passe d'une page à l'autre ; un point rouge rappelle la pesée du jour
+  function updateWeightButton() {
+    const btn = el('pageBtn');
+    if (!btn) return;
+    const weighed = getWeights().some(w => w.date === todayIso());
+    btn.classList.toggle('on-weight', currentPage === 'weight');
+    btn.textContent = currentPage === 'weight' ? '🛡️ Guide' : `⚖️ Poids${weighed ? '' : ' 🔴'}`;
+    btn.title = currentPage === 'weight' ? 'Revenir au guide du jour' : 'Ouvrir le suivi du poids';
+  }
+
+  function showPage(name) {
+    flushPendingSaves();
+    currentPage = name === 'weight' ? 'weight' : 'main';
+    el('pageMain').style.display = currentPage === 'main' ? 'block' : 'none';
+    el('pageWeight').style.display = currentPage === 'weight' ? 'block' : 'none';
+    try { history.replaceState(null, '', currentPage === 'weight' ? '#poids' : location.pathname + location.search); } catch (e) { /* rien */ }
+    updateWeightButton();
+    window.scrollTo({ top: 0 });
+    if (currentPage === 'weight') renderWeightPage();
+    else updateDashboard();
+  }
+
+  function togglePage() { showPage(currentPage === 'weight' ? 'main' : 'weight'); }
+
   function updateDashboard() {
     renderFamilyEvents();
+    updateWeightButton();
     updateBackupUI();
     lastRenderDay = todayIso();
     renderLogs();
@@ -2026,7 +2527,9 @@
       prefChocolat: localStorage.getItem('prefChocolat'),
       prefPlat: localStorage.getItem('prefPlat'),
       prefBoisson: localStorage.getItem('prefBoisson'),
-      cycleLogs: getLogs()
+      cycleLogs: getLogs(),
+      weightLogs: getWeights(),
+      weightGoal: JSON.parse(localStorage.getItem('weightGoal') || 'null')
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const downloadAnchor = document.createElement('a');
@@ -2053,7 +2556,9 @@
       prefChocolat: localStorage.getItem('prefChocolat'),
       prefPlat: localStorage.getItem('prefPlat'),
       prefBoisson: localStorage.getItem('prefBoisson'),
-      cycleLogs: getLogs()
+      cycleLogs: getLogs(),
+      weightLogs: getWeights(),
+      weightGoal: JSON.parse(localStorage.getItem('weightGoal') || 'null')
     }, null, 2);
   }
 
@@ -2077,7 +2582,7 @@
     const due = new Date().getDate() >= BACKUP_DAY && localStorage.getItem('lastBackupMonth') !== currentMonthKey();
     const snoozed = localStorage.getItem('backupSnoozeDate') === todayIso();
     if (banner) {
-      banner.style.display = due && !snoozed && getLogs().length ? 'block' : 'none';
+      banner.style.display = due && !snoozed && (getLogs().length || getWeights().length) ? 'block' : 'none';
       el('backupBannerText').textContent = email
         ? `C'est le moment d'envoyer la sauvegarde de tes notes à ${email}. Choisis Gmail dans le menu qui s'ouvre, puis colle l'adresse dans « À ».`
         : "C'est le moment d'envoyer la sauvegarde de tes notes. Indique ton adresse e-mail dans la Configuration, tout en bas.";
@@ -2141,6 +2646,9 @@
         if (imported.prefPlat) store('prefPlat', imported.prefPlat);
         if (imported.prefBoisson) store('prefBoisson', imported.prefBoisson);
         if (Array.isArray(imported.cycleLogs)) setLogs(imported.cycleLogs);
+        if (Array.isArray(imported.weightLogs)) setWeights(imported.weightLogs);
+        if (imported.weightGoal && typeof imported.weightGoal === 'object') store('weightGoal', JSON.stringify(imported.weightGoal));
+        if (currentPage === 'weight') renderWeightPage();
         alert("Données importées avec succès !");
         loadPrefsIntoForm();
         startNewObservation(todayIso());
@@ -2158,6 +2666,7 @@
     el('crisisNote').addEventListener('input', () => scheduleAutoSave());
     ['prefChocolat', 'prefPlat', 'prefBoisson'].forEach(id => el(id).addEventListener('input', scheduleSettingsSave));
     el('cycleLength').addEventListener('input', scheduleSettingsSave);
+    el('wKg').addEventListener('keydown', e => { if (e.key === 'Enter') saveWeight(); });
     el('backupEmail').addEventListener('change', e => { store('backupEmail', e.target.value.trim()); updateBackupUI(); showToast('✅ Adresse enregistrée sur ce téléphone'); });
 
     el('pinAttempt').addEventListener('keyup', e => {
@@ -2173,6 +2682,7 @@
         // L'app est restée ouverte jusqu'au lendemain : on passe au nouveau jour
         if (!currentEntryId && currentFormDate === lastRenderDay) startNewObservation(todayIso());
         updateDashboard();
+        if (currentPage === 'weight') { el('wDate').value = todayIso(); renderWeightPage(); }
       }
     });
   }
@@ -2199,9 +2709,10 @@
       box.textContent = `✅ Configuration enregistrée : début des règles le ${fmtDate(localStorage.getItem('startDate'))}, cycle de ${getCycleLength()} jours.`;
     }
   }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startApp);
-  else startApp();
-  window.addEventListener('load', () => updateDashboard()); // redessine les graphiques une fois Chart.js chargé
+  function startAndRoute() { startApp(); if (location.hash === '#poids') showPage('weight'); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startAndRoute);
+  else startAndRoute();
+  window.addEventListener('load', () => { updateDashboard(); if (currentPage === 'weight') renderWeightPage(); }); // redessine les graphiques une fois Chart.js chargé
 </script>
 </body>
 </html>
