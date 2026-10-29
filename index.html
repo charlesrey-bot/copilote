@@ -237,6 +237,7 @@
     details.events-dropdown { border: 1px solid var(--border); border-radius: 12px; padding: 0 12px; margin-top: 10px; background: var(--input-bg); }
     details.events-dropdown summary { cursor: pointer; padding: 12px 0; font-weight: bold; font-size: 0.95rem; list-style-position: inside; }
     details.journal-dropdown summary { font-size: 1.1rem; }
+    details.settings-dropdown[open] { padding-bottom: 12px; }
     details.events-dropdown[open] summary { border-bottom: 1px solid var(--border); }
     .events-count { font-weight: normal; font-size: 0.8rem; color: var(--subtext); margin-left: 4px; }
     .fe-month { font-weight: bold; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--subtext); margin: 12px 0 4px; }
@@ -648,7 +649,8 @@
 
   <!-- 9. CONFIGURATION & PRÉFÉRENCES -->
   <div class="card config-card">
-    <h2>⚙️ Configuration & Préférences Personnelles</h2>
+    <details class="events-dropdown journal-dropdown settings-dropdown" id="configDropdown">
+    <summary>⚙️ Configuration & Préférences Personnelles</summary>
     
     <label>Premier jour des dernières règles :</label>
     <input type="date" id="startDate" onchange="saveSettings()" oninput="saveSettings()" onblur="saveSettings()">
@@ -703,6 +705,7 @@
 
     <button class="btn-primary" onclick="saveSettingsNow()" style="margin-top: 15px; font-size:1rem;">💾 Enregistrer la configuration</button>
     <div id="settingsStatus" class="autosave-status">💾 Les réglages sont aussi enregistrés automatiquement à chaque changement.</div>
+    </details>
   </div>
 
   </div><!-- fin #pageMain -->
@@ -847,7 +850,8 @@
 
   <!-- Réglages de l'objectif -->
   <div class="card config-card">
-    <h2>⚙️ Réglages de l'objectif</h2>
+    <details class="events-dropdown journal-dropdown settings-dropdown" id="weightGoalDropdown">
+    <summary>⚙️ Réglages de l'objectif</summary>
     <label>Poids objectif (kg) :</label>
     <input type="number" id="wTargetKg" step="0.5" min="30" max="300" inputmode="decimal">
     <label>Date de départ :</label>
@@ -858,6 +862,7 @@
     <input type="number" id="wHeight" step="1" min="120" max="230" inputmode="numeric" placeholder="ex. 182">
     <button class="btn-primary" onclick="saveWeightGoal()">💾 Enregistrer l'objectif</button>
     <p class="scene-caption">Les pesées sont enregistrées sur ce téléphone et incluses dans la sauvegarde mensuelle.</p>
+    </details>
   </div>
 </div>
 
@@ -2314,7 +2319,8 @@
     setFieldIfIdle('cycleLength', cycleLength);
 
     if (!startDate) {
-      el('doTip').innerHTML = `<strong>👇 ATTENTION :</strong> Veuillez descendre en bas pour configurer la date.`;
+      el('doTip').innerHTML = `<strong>👇 ATTENTION :</strong> Ouvre « ⚙️ Configuration & Préférences » tout en bas pour indiquer la date.`;
+      if (el('configDropdown')) el('configDropdown').open = true;
       el('alarmBanner').style.display = 'none';
       updateScene(null, cycleLength);
       return;
