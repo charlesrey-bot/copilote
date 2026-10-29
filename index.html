@@ -230,6 +230,8 @@
     .w-row .w-txt { flex: 1; min-width: 0; color: var(--subtext); font-size: 0.8rem; }
     .w-tips { padding-left: 18px; font-size: 0.88rem; line-height: 1.5; }
     .w-tips li { margin-bottom: 6px; }
+    .w-tips-section h3 { font-size: 0.95rem; margin: 14px 0 4px; }
+    .w-tip-day { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border); font-size: 0.86rem; }
     .chip.done { background: #00b894; color: #fff; border-color: #00b894; cursor: default; }
     .chip.todo { cursor: default; opacity: 0.65; }
     details.events-dropdown { border: 1px solid var(--border); border-radius: 12px; padding: 0 12px; margin-top: 10px; background: var(--input-bg); }
@@ -743,6 +745,12 @@
     <p class="scene-caption">💡 Pèse-toi chaque matin au réveil, après les toilettes et avant de manger, sur la même balance : c'est la mesure la plus comparable d'un jour à l'autre.</p>
   </div>
 
+  <!-- Coach : conseils selon la situation -->
+  <div class="card">
+    <h2>🧭 Mon coach</h2>
+    <div id="wCoach" class="advice-box" style="margin-top:0; border-left-color:#00b894;"></div>
+  </div>
+
   <!-- Objectif et progression -->
   <div class="card">
     <h2>🎯 Objectif : <span id="wGoalTitle">95 kg</span></h2>
@@ -776,17 +784,58 @@
   <!-- Conseils -->
   <div class="card">
     <details class="events-dropdown journal-dropdown">
-      <summary>💡 Conseils pour tenir l'objectif</summary>
-      <ul class="w-tips">
-        <li><strong>Rythme sain : 0,5 à 1 kg par semaine.</strong> Plus vite, on perd aussi du muscle et on reprend plus facilement.</li>
-        <li><strong>Regarde la moyenne sur 7 jours, pas le chiffre du jour.</strong> L'eau, le sel, un repas tardif font varier le poids de 1 à 2 kg d'un jour à l'autre.</li>
-        <li><strong>Des protéines à chaque repas</strong> (viande, poisson, œufs, yaourt nature, fromage blanc, légumineuses) : elles calent et protègent les muscles.</li>
-        <li><strong>La moitié de l'assiette en légumes</strong>, et les calories les plus faciles à couper : boissons sucrées, alcool, grignotage du soir.</li>
-        <li><strong>Bouger tous les jours</strong> : viser 8 000 à 10 000 pas, et 2 séances de renforcement musculaire par semaine.</li>
-        <li><strong>Dormir 7 heures ou plus</strong> : le manque de sommeil augmente la faim.</li>
-        <li><strong>Un plateau de 2 à 3 semaines est normal.</strong> Si la moyenne ne baisse plus pendant 3 semaines, réduis un peu les portions ou ajoute de la marche.</li>
-        <li>En cas de traitement ou de problème de santé, demande l'avis de ton médecin avant de changer ton alimentation.</li>
-      </ul>
+      <summary>💡 Tips & tricks pour atteindre l'objectif</summary>
+      <div class="w-tips-section">
+        <h3>🧭 Les bases</h3>
+        <ul class="w-tips">
+          <li><strong>Rythme sain : 0,5 à 1 kg par semaine.</strong> Plus vite, on perd aussi du muscle et on reprend plus facilement.</li>
+          <li><strong>Regarde la moyenne sur 7 jours, pas le chiffre du jour.</strong> L'eau, le sel, un repas tardif font varier le poids de 1 à 2 kg d'un jour à l'autre.</li>
+          <li><strong>Des protéines à chaque repas</strong> (viande, poisson, œufs, yaourt nature, fromage blanc, légumineuses) : elles calent et protègent les muscles.</li>
+          <li><strong>La moitié de l'assiette en légumes</strong>, un quart de protéines, un quart de féculents.</li>
+          <li><strong>Les calories les plus faciles à couper</strong> : boissons sucrées, alcool, grignotage du soir, sauces.</li>
+          <li><strong>Bouger tous les jours</strong> : 8 000 à 10 000 pas, et 2 séances de renforcement musculaire par semaine.</li>
+          <li><strong>Dormir 7 heures ou plus</strong> : le manque de sommeil augmente la faim et l'envie de sucré.</li>
+        </ul>
+      </div>
+      <div class="w-tips-section">
+        <h3>📉 Quand ça baisse</h3>
+        <ul class="w-tips">
+          <li><strong>Ne change rien qui marche</strong> : garde les mêmes repas types et la même marche.</li>
+          <li><strong>Pas de « récompense » alimentaire</strong> après un bon chiffre : c'est le piège classique du lendemain.</li>
+          <li><strong>Célèbre chaque palier</strong> autrement : un vêtement, une sortie, un massage, une photo avant/après.</li>
+          <li><strong>Anticipe les semaines chargées</strong> (repas d'affaires, fêtes) : décide à l'avance ce que tu prendras.</li>
+          <li><strong>Garde les protéines et le sport</strong> pour perdre du gras et pas du muscle.</li>
+        </ul>
+      </div>
+      <div class="w-tips-section">
+        <h3>📈 Quand ça monte</h3>
+        <ul class="w-tips">
+          <li><strong>+0,5 à +2 kg en un jour, c'est de l'eau</strong> : repas salé ou tardif, alcool, féculents, sport intense, manque de sommeil. Ça repart en 2 ou 3 jours.</li>
+          <li><strong>Ne compense pas en jeûnant</strong> : reprends simplement ta routine normale, bois bien, mange peu salé.</li>
+          <li><strong>Si la moyenne remonte une semaine entière</strong>, cherche la cause dans tes notes (week-end, restos, stress, sommeil).</li>
+          <li><strong>Note tout ce que tu manges pendant 3 jours</strong> : la prise de conscience suffit souvent à corriger.</li>
+          <li><strong>Coupe l'alcool et les boissons sucrées</strong> pendant une semaine et ajoute 20 minutes de marche par jour.</li>
+          <li><strong>Une mauvaise journée ne ruine rien</strong> : c'est la tendance sur des semaines qui compte. Le repas suivant est un nouveau départ.</li>
+        </ul>
+      </div>
+      <div class="w-tips-section">
+        <h3>⏸️ Quand ça stagne (plateau)</h3>
+        <ul class="w-tips">
+          <li><strong>Un plateau de 2 à 3 semaines est normal</strong> : le corps s'adapte à un poids plus bas.</li>
+          <li><strong>Réduis un peu les féculents le soir</strong> ou ajoute 2 000 pas par jour.</li>
+          <li><strong>Vérifie les petits extras</strong> qui ont grossi avec le temps : huile, fromage, sauces, grignotages.</li>
+          <li><strong>Mesure ton tour de taille</strong> : il baisse souvent même quand la balance ne bouge pas.</li>
+        </ul>
+      </div>
+      <div class="w-tips-section">
+        <h3>🍽️ Au restaurant, en apéro, en week-end</h3>
+        <ul class="w-tips">
+          <li><strong>Au restaurant</strong> : un plat + entrée <em>ou</em> dessert, des légumes en accompagnement, pas de pain en attendant.</li>
+          <li><strong>À l'apéro</strong> : un verre d'eau entre chaque verre, et plutôt légumes et charcuterie maigre que chips.</li>
+          <li><strong>Le week-end</strong> : garde le même petit-déjeuner et une longue balade (en famille, ça compte !).</li>
+        </ul>
+      </div>
+      <p class="scene-caption">En cas de traitement ou de problème de santé, demande l'avis de ton médecin avant de changer ton alimentation.</p>
     </details>
   </div>
 
@@ -1708,11 +1757,13 @@
     let g = {};
     try { g = JSON.parse(localStorage.getItem(WGOAL_KEY) || '{}') || {}; } catch (e) { g = {}; }
     const ws = getWeights();
-    const startDate = ISO_RE.test(g.startDate || '') ? g.startDate : (ws[0] ? ws[0].date : todayIso());
+    const auto = g.auto !== false; // objectif créé automatiquement, pas modifié à la main
+    let startDate = ISO_RE.test(g.startDate || '') ? g.startDate : (ws[0] ? ws[0].date : todayIso());
+    if (auto && ws[0] && ws[0].date < startDate) startDate = ws[0].date;
     return {
       targetKg: parseFloat(g.targetKg) || DEFAULT_TARGET_KG,
       startDate: startDate,
-      targetDate: ISO_RE.test(g.targetDate || '') ? g.targetDate : addMonths(startDate, DEFAULT_MONTHS),
+      targetDate: (!auto && ISO_RE.test(g.targetDate || '')) ? g.targetDate : addMonths(startDate, DEFAULT_MONTHS),
       heightCm: parseFloat(g.heightCm) || null
     };
   }
@@ -1739,6 +1790,7 @@
     return den ? num / den : null;
   }
 
+  // Poids de départ : la pesée du jour de départ, sinon la première pesée qui suit (ou la toute première)
   function startWeight(ws, goal) {
     const fromStart = ws.find(w => w.date >= goal.startDate);
     return (fromStart || ws[0] || {}).kg ?? null;
@@ -1760,10 +1812,11 @@
     const today = todayIso();
     const last = ws[ws.length - 1];
     const startKg = startWeight(ws, goal);
-    const current = avg7(ws, last.date);
+    const latest = last.kg;                // dernière pesée : base de « perdu », « reste », progression, paliers
+    const current = avg7(ws, last.date);   // moyenne 7 jours : base du verdict et de la tendance (lisse les variations d'eau)
     const slope = trendPerDay(ws);
-    const lost = startKg - current;
-    const remaining = Math.max(0, current - goal.targetKg);
+    const lost = startKg - latest;
+    const remaining = Math.max(0, latest - goal.targetKg);
     const totalToLose = Math.max(0.1, startKg - goal.targetKg);
     const daysLeft = daysBetween(today, goal.targetDate);
     const weeksLeft = daysLeft / 7;
@@ -1774,10 +1827,10 @@
     if (slope !== null && slope < -0.005 && remaining > 0) eta = addDays(last.date, Math.ceil(remaining / -slope));
     const minKg = Math.min(...ws.map(w => w.kg));
     return {
-      ws, goal, empty: false, last, startKg, current, slope, lost, remaining, totalToLose,
+      ws, goal, empty: false, last, latest, startKg, current, slope, lost, remaining, totalToLose,
       daysLeft, neededPerWeek, idealToday, eta, minKg,
       progress: Math.max(0, Math.min(1, lost / totalToLose)),
-      bmi: goal.heightCm ? current / Math.pow(goal.heightCm / 100, 2) : null,
+      bmi: goal.heightCm ? latest / Math.pow(goal.heightCm / 100, 2) : null,
       streak: weighStreak(ws)
     };
   }
@@ -1786,10 +1839,116 @@
     return `<div class="stat-card"><div class="stat-number"${color ? ` style="color:${color};"` : ''}>${value}</div><div class="stat-label">${label}</div></div>`;
   }
 
+  /* ---------- Coach : conseils selon la situation (baisse, remontée, plateau…) ---------- */
+  const DAILY_TIPS = [
+    "Prépare ton déjeuner de demain ce soir : ce qui est prévu est mangé, le reste est grignoté.",
+    "Un grand verre d'eau avant chaque repas : on mange souvent un peu moins.",
+    "Assiette en 3 parts : la moitié de légumes, un quart de protéines, un quart de féculents.",
+    "Mange lentement : il faut environ 20 minutes pour que la sensation de satiété arrive.",
+    "Garde les grignotages hors de vue (placard fermé) et mets les fruits en évidence.",
+    "Une marche de 15 minutes après le repas du soir aide la digestion et la glycémie.",
+    "Remplace un soda ou une bière par une eau gazeuse citron : souvent −150 kcal sans effort.",
+    "Au restaurant : choisis le plat d'abord, puis l'entrée ou le dessert, pas les deux.",
+    "Les protéines au petit-déjeuner (œufs, yaourt nature, fromage blanc) calent jusqu'à midi.",
+    "Utilise une assiette plus petite le soir : même plaisir, portion plus raisonnable.",
+    "Prends les escaliers et descends un arrêt plus tôt : les petits pas comptent sur un mois.",
+    "Couche-toi 30 minutes plus tôt : la fatigue augmente l'envie de sucré le lendemain.",
+    "Fais tes courses le ventre plein et avec une liste : moins d'achats d'impulsion.",
+    "L'alcool ouvre l'appétit et apporte beaucoup de calories : garde-le pour le week-end.",
+    "Sers-toi une fois et range le plat avant de manger : pas de resservice automatique.",
+    "Fais-toi un plaisir prévu dans la semaine : un écart planifié ne fait pas dérailler.",
+    "Note ce qui t'a fait craquer dans le champ « Note » : on repère vite les pièges.",
+    "Soupe de légumes en entrée le soir : volume, fibres, et on mange moins ensuite.",
+    "Bouge pendant les appels ou la télé : 2 000 pas de plus sans y penser.",
+    "Le week-end compte comme la semaine : garde le même petit-déjeuner et la même marche.",
+    "Récompense chaque palier par autre chose que la nourriture : un vêtement, une sortie, un massage."
+  ];
+
+  function coachHtml(st) {
+    if (st.empty) {
+      return "🚀 Première étape : une pesée demain matin, au réveil. Ensuite, regarde surtout la moyenne sur 7 jours, pas le chiffre du jour.";
+    }
+    const ws = st.ws;
+    const last = st.last;
+    const prev = ws.length > 1 ? ws[ws.length - 2] : null;
+    const dayDelta = prev && daysBetween(prev.date, last.date) <= 3 ? last.kg - prev.kg : null;
+    const weekAgo = avg7(ws, addDays(last.date, -7));
+    const weekDelta = weekAgo !== null ? st.current - weekAgo : null;
+    const lossPerWeek = st.slope !== null ? -st.slope * 7 : null;
+    const spanDays = daysBetween(ws[0].date, last.date);
+    const list = items => `<ul class="w-tips">${items.map(t => `<li>${t}</li>`).join('')}</ul>`;
+    let title, items;
+
+    if (st.remaining <= 0) {
+      title = "🏆 <strong>Objectif atteint.</strong> Le plus dur maintenant : garder ce poids.";
+      items = [
+        "Continue les pesées quotidiennes : c'est le meilleur signal d'alerte.",
+        "Remonte doucement les portions, par exemple +200 kcal par jour, tant que la moyenne reste stable.",
+        "Garde les habitudes qui ont marché : marche, protéines, peu d'alcool en semaine.",
+        "Fixe-toi une limite : si la moyenne dépasse l'objectif de 2 kg, reprends le plan quelques semaines."
+      ];
+    } else if (weekDelta !== null && weekDelta > 0.3) {
+      title = `📈 <strong>Ta moyenne remonte (${fmtSigned(weekDelta)} en 1 semaine).</strong> Pas de culpabilité : on corrige maintenant, tant que c'est petit.`;
+      items = [
+        "<strong>Retrouve la cause</strong> : week-end, restos, apéros, stress, sommeil ? Regarde tes notes des derniers jours.",
+        "<strong>Note tout ce que tu manges pendant 3 jours</strong> (papier ou appli) : ça suffit souvent à remettre les compteurs à zéro.",
+        "<strong>Coupe les calories liquides</strong> cette semaine : sodas, jus, bière, vin.",
+        "<strong>Prévois tes repas</strong> pour les 3 prochains jours, avec des légumes et des protéines à chaque repas.",
+        "<strong>Ajoute 20 minutes de marche</strong> par jour cette semaine.",
+        "<strong>Ne saute pas de repas</strong> pour compenser : ça finit souvent en fringale le soir."
+      ];
+    } else if (dayDelta !== null && dayDelta >= 0.5) {
+      title = `🌊 <strong>+${round1(dayDelta).toFixed(1)} kg depuis la dernière pesée : c'est presque sûrement de l'eau, pas de la graisse.</strong> Pour prendre 1 kg de graisse, il faudrait environ 7 000 kcal de trop.`;
+      items = [
+        "<strong>Causes fréquentes</strong> : repas salé ou tardif, féculents ou alcool la veille, sport intense (muscles qui retiennent l'eau), manque de sommeil, transit.",
+        "<strong>Aujourd'hui</strong> : bois bien (1,5 à 2 litres), mange peu salé, des légumes, et reprends ta routine normale.",
+        "<strong>Ne compense pas</strong> en mangeant presque rien : la variation repart d'elle-même en 2 ou 3 jours.",
+        weekDelta !== null ? `Ta moyenne sur 7 jours est à ${fmtSigned(weekDelta)} en une semaine : c'est elle qui compte.` : "Regarde la moyenne sur 7 jours dans quelques jours : c'est elle qui compte."
+      ];
+    } else if (lossPerWeek !== null && Math.abs(lossPerWeek) < 0.15 && spanDays >= 14) {
+      title = "⏸️ <strong>Plateau : ta moyenne bouge très peu depuis 3 semaines.</strong> C'est normal, le corps s'adapte. On relance doucement.";
+      items = [
+        "<strong>Réduis un peu les portions de féculents</strong> le soir (un quart d'assiette au lieu d'un tiers).",
+        "<strong>Ajoute de l'activité</strong> : 2 000 pas de plus par jour, ou une séance de renforcement en plus par semaine.",
+        "<strong>Vérifie les « petits extras »</strong> : sauces, huile, fromage, grignotages : ce sont souvent eux qui ont grossi.",
+        "<strong>Dors assez</strong> et garde le même rythme le week-end.",
+        "Ton tour de taille peut baisser même quand la balance stagne, surtout si tu fais du sport."
+      ];
+    } else if (lossPerWeek !== null && lossPerWeek > 1.2) {
+      title = `⚡ <strong>Tu perds vite (${round1(lossPerWeek).toFixed(1)} kg par semaine).</strong> Bravo, mais attention à ne pas perdre du muscle.`;
+      items = [
+        "Mange assez de <strong>protéines</strong> à chaque repas, et ne descends pas trop bas en calories.",
+        "Garde <strong>2 séances de renforcement</strong> par semaine pour protéger tes muscles.",
+        "Si tu te sens fatigué ou à cran, remonte un peu les portions : 0,5 à 1 kg par semaine suffit pour l'objectif."
+      ];
+    } else if ((dayDelta !== null && dayDelta < 0) || (weekDelta !== null && weekDelta < 0)) {
+      const bits = [];
+      if (dayDelta !== null && dayDelta < 0) bits.push(`${fmtSigned(dayDelta)} depuis la dernière pesée`);
+      if (weekDelta !== null && weekDelta < 0) bits.push(`${fmtSigned(weekDelta)} sur la moyenne d'une semaine`);
+      title = `📉 <strong>Ça descend : ${bits.join(', ')}.</strong> Continue exactement comme ça.`;
+      items = [
+        "<strong>Ne change rien qui marche</strong> : même routine de repas et de marche.",
+        "<strong>Ne relâche pas trop vite</strong> : un bon chiffre n'est pas une raison pour un gros écart ce soir.",
+        "<strong>Prévois les pièges de la semaine</strong> (repas d'affaires, apéro, week-end) et décide à l'avance ce que tu prendras.",
+        "<strong>Récompense-toi</strong> autrement que par la nourriture à chaque kilo perdu."
+      ];
+    } else {
+      title = "👍 <strong>Stable pour l'instant.</strong> La régularité fait le résultat : une bonne journée après l'autre.";
+      items = [
+        "Une pesée chaque matin, et regarde la moyenne sur 7 jours.",
+        "Des légumes et des protéines à chaque repas, peu de sucre et d'alcool en semaine.",
+        "8 000 pas par jour minimum."
+      ];
+    }
+    const tip = DAILY_TIPS[Math.abs(daysBetween('2026-01-01', todayIso())) % DAILY_TIPS.length];
+    return `${title}${list(items)}<div class="w-tip-day">💡 <strong>Astuce du jour :</strong> ${tip}</div>`;
+  }
+
   function renderWeightPage() {
     if (!el('pageWeight')) return;
     const st = computeWeightStats();
     const goal = st.goal;
+    el('wCoach').innerHTML = coachHtml(st);
     el('wGoalTitle').textContent = `${round1(goal.targetKg)} kg le ${fmtDate(goal.targetDate)}`;
     if (!el('wDate').value) el('wDate').value = todayIso();
     setFieldIfIdle('wTargetKg', round1(goal.targetKg));
@@ -1823,16 +1982,17 @@
     el('wLastDeltas').innerHTML =
       `vs pesée précédente : ${prev ? deltaHtml(last.kg - prev.kg) : '—'}<br>` +
       `moyenne 7 j : <strong>${fmtKg(st.current)}</strong> (${weekAgoAvg !== null ? deltaHtml(st.current - weekAgoAvg) + ' en 1 semaine' : 'semaine précédente inconnue'})<br>` +
-      `depuis le départ : ${deltaHtml(st.current - st.startKg)}`;
+      `depuis la 1re pesée (${fmtKg(st.startKg)}) : ${deltaHtml(st.latest - st.startKg)}`;
 
     // --- progression
     el('wProgressBar').style.width = `${Math.round(st.progress * 100)}%`;
-    el('wProgressText').textContent = `${Math.round(st.progress * 100)} % du chemin : ${fmtKg(st.startKg)} → ${fmtKg(st.current)} → objectif ${fmtKg(goal.targetKg)}`;
+    el('wProgressText').textContent = `${Math.round(st.progress * 100)} % du chemin : ${fmtKg(st.startKg)} au départ → ${fmtKg(st.latest)} aujourd'hui → objectif ${fmtKg(goal.targetKg)}`;
 
     const lossPerWeek = st.slope !== null ? -st.slope * 7 : null;
     let tiles = '';
-    tiles += statCard(fmtKg(st.current), 'Poids actuel (moyenne 7 jours)');
-    tiles += statCard(st.lost >= 0 ? `−${round1(st.lost).toFixed(1)} kg` : `+${round1(-st.lost).toFixed(1)} kg`, 'Depuis le départ', st.lost > 0 ? '#00b894' : '#d63031');
+    tiles += statCard(fmtKg(st.latest), `Dernière pesée (${fmtShortDate(st.last.date)})`);
+    tiles += statCard(fmtKg(st.current), 'Moyenne sur 7 jours');
+    tiles += statCard(st.lost >= 0 ? `−${round1(st.lost).toFixed(1)} kg` : `+${round1(-st.lost).toFixed(1)} kg`, `Depuis la 1re pesée (${fmtKg(st.startKg)})`, st.lost > 0 ? '#00b894' : '#d63031');
     tiles += statCard(fmtKg(st.remaining), 'Reste à perdre');
     tiles += statCard(st.daysLeft > 0 ? `${st.daysLeft} j` : 'Échéance passée', `Jusqu'au ${fmtDate(goal.targetDate)}`);
     tiles += statCard(st.neededPerWeek !== null ? `${round1(st.neededPerWeek).toFixed(1)} kg/sem` : '—', 'Rythme nécessaire');
@@ -1875,7 +2035,7 @@
     steps.push({ label: `🎯 ${round1(goal.targetKg)} kg`, kg: goal.targetKg });
     steps.sort((a, b) => b.kg - a.kg);
     el('wMilestones').innerHTML = steps.map(s => {
-      const done = st.current <= s.kg + 1e-9;
+      const done = st.latest <= s.kg + 1e-9;
       return `<span class="chip ${done ? 'done' : 'todo'}">${done ? '✅ ' : ''}${esc(s.label)}</span>`;
     }).join('');
 
@@ -1968,7 +2128,7 @@
     if (!setWeights(list)) return;
     // première pesée : l'objectif démarre ce jour-là (95 kg dans 5 mois)
     if (!localStorage.getItem(WGOAL_KEY)) {
-      store(WGOAL_KEY, JSON.stringify({ targetKg: DEFAULT_TARGET_KG, startDate: date, targetDate: addMonths(date, DEFAULT_MONTHS) }));
+      store(WGOAL_KEY, JSON.stringify({ targetKg: DEFAULT_TARGET_KG, startDate: date, targetDate: addMonths(date, DEFAULT_MONTHS), auto: true }));
     }
     el('wKg').value = '';
     el('wNote').value = '';
@@ -1976,8 +2136,8 @@
     const after = computeWeightStats();
     let msg = `✅ ${fmtKg(kg)} enregistré`;
     if (!before.empty && kg < before.minKg) msg = `🎉 Nouveau plus bas : ${fmtKg(kg)} !`;
-    if (!before.empty && Math.floor(before.startKg - before.current) < Math.floor(after.startKg - after.current)) {
-      msg = `🏅 Palier atteint : −${Math.floor(after.startKg - after.current)} kg (moyenne 7 jours) !`;
+    if (!before.empty && Math.floor(before.startKg - before.latest) < Math.floor(after.startKg - after.latest)) {
+      msg = `🏅 Palier atteint : −${Math.floor(after.startKg - after.latest)} kg depuis la 1re pesée !`;
     }
     showToast(msg);
     renderWeightPage();
@@ -2009,7 +2169,9 @@
     const heightCm = parseFloat(el('wHeight').value);
     if (!isFinite(targetKg) || targetKg < 30 || targetKg > 300) { showToast('⚠️ Poids objectif invalide'); return; }
     if (!startDate || !targetDate || targetDate <= startDate) { showToast('⚠️ La date visée doit être après la date de départ'); return; }
-    store(WGOAL_KEY, JSON.stringify({ targetKg: round1(targetKg), startDate, targetDate, heightCm: isFinite(heightCm) ? heightCm : null }));
+    const prevGoal = getWeightGoal();
+    const datesChanged = startDate !== prevGoal.startDate || targetDate !== prevGoal.targetDate;
+    store(WGOAL_KEY, JSON.stringify({ targetKg: round1(targetKg), startDate, targetDate, heightCm: isFinite(heightCm) ? heightCm : null, auto: !datesChanged && (JSON.parse(localStorage.getItem(WGOAL_KEY) || '{}') || {}).auto !== false }));
     showToast('✅ Objectif enregistré');
     renderWeightPage();
   }
