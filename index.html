@@ -492,14 +492,6 @@
     <div id="eventTestResult" class="advice-box" style="display:none; margin-top:10px;"></div>
   </div>
 
-  <!-- 4. LISTE CIBLÉE : 5 COURSES & ATTENTIONS DU JOUR -->
-  <div class="card" id="cardDailyItems">
-    <h2>🛒 5 Attentions & Courses du Jour</h2>
-    <p style="font-size:0.8rem; color:var(--subtext); margin-top:0;">Suggestions personnalisées selon ses favoris et le jour :</p>
-
-    <div id="dailyItemsList"></div>
-  </div>
-
   <!-- 5. GRAPHIQUE HISTORIQUE DU CYCLE ACTUEL -->
   <div class="card">
     <h2>📈 Historique du Cycle Actuel</h2>
@@ -718,11 +710,6 @@
 <!-- ===================== PAGE 2 : SUIVI DU POIDS ===================== -->
 <div id="pageWeight" style="display:none;">
 
-  <div id="weightReminder" class="alarm-box" style="display:none; border-left-color:#00b894;">
-    <strong>⚖️ Pesée du jour</strong>
-    <div style="margin-top:4px;">Tu n'as pas encore noté ton poids aujourd'hui. Le matin à jeun, c'est le plus fiable.</div>
-  </div>
-
   <!-- Saisie + mini-graphique à côté -->
   <div class="card">
     <h2>⚖️ Poids du jour</h2>
@@ -732,6 +719,9 @@
         <input type="date" id="wDate">
         <label>Poids (kg) :</label>
         <input type="number" id="wKg" step="0.1" min="30" max="300" inputmode="decimal" placeholder="ex. 102.4">
+        <label>📏 Tour de taille en cm (facultatif, 1 fois par semaine) :</label>
+        <input type="number" id="wWaist" step="0.5" min="50" max="200" inputmode="decimal" placeholder="ex. 104">
+        <span class="scene-caption" id="wWaistHint"></span>
         <label>Note (facultatif) :</label>
         <input type="text" id="wNote" placeholder="ex. resto hier soir, sport, mal dormi…">
         <button class="btn-primary" onclick="saveWeight()" style="background:#00b894;">✅ Enregistrer mon poids</button>
@@ -765,6 +755,22 @@
     <h2>📈 Ma courbe</h2>
     <div class="chart-container" style="height:270px;"><canvas id="wChart"></canvas></div>
     <p class="scene-caption">Points : pesées · trait vert : moyenne sur 7 jours · pointillés gris : chemin prévu jusqu'à l'objectif · pointillés violets : où mène la tendance actuelle · ligne rouge : objectif.</p>
+  </div>
+
+  <!-- Bilan semaine par semaine -->
+  <div class="card">
+    <h2>📊 Semaine par semaine</h2>
+    <div class="chart-container" style="height:180px;"><canvas id="wWeekChart"></canvas></div>
+    <p class="scene-caption">Écart de la moyenne de chaque semaine (lundi → dimanche) avec la semaine précédente : vert = baisse, rouge = hausse.</p>
+    <div id="wWeekTable"></div>
+  </div>
+
+  <!-- Tour de taille -->
+  <div class="card">
+    <h2>📏 Tour de taille</h2>
+    <div id="wWaistSummary" style="font-size:0.9rem;"></div>
+    <div class="chart-container" style="height:170px; margin-top:8px;"><canvas id="wWaistChart"></canvas></div>
+    <p class="scene-caption">Mesure au niveau du nombril, debout, ventre relâché, en fin d'expiration, toujours au même moment. Repères de l'OMS : risque accru au-dessus de 94 cm pour un homme (80 cm pour une femme), nettement accru au-dessus de 102 cm (88 cm). Il baisse souvent même quand la balance stagne.</p>
   </div>
 
   <!-- Paliers -->
@@ -1744,7 +1750,7 @@
       if (!Array.isArray(raw)) return [];
       return raw
         .filter(w => w && ISO_RE.test(w.date || '') && isFinite(parseFloat(w.kg)))
-        .map(w => ({ date: w.date, kg: parseFloat(w.kg), note: w.note || '' }))
+        .map(w => ({ date: w.date, kg: parseFloat(w.kg), note: w.note || '', waist: isFinite(parseFloat(w.waist)) ? parseFloat(w.waist) : null }))
         .sort((a, b) => a.date.localeCompare(b.date));
     } catch (e) { return []; }
   }
@@ -1944,6 +1950,86 @@
     return `${title}${list(items)}<div class="w-tip-day">💡 <strong>Astuce du jour :</strong> ${tip}</div>`;
   }
 
+  /* ---------- Bilan par semaine et tour de taille ---------- */
+  let wWeekInstance = null;
+  let wWaistInstance = null;
+
+  function mondayOf(iso) {
+    const wd = (parseIso(iso).getDay() + 6) % 7; // lundi = 0
+    return addDays(iso, -wd);
+  }
+
+  // Moyenne de chaque semaine (lundi → dimanche) et écart avec la semaine précédente
+  function weeklySummary(ws) {
+    const map = new Map();
+    ws.forEach(w => {
+      const k = mondayOf(w.date);
+      if (!map.has(k)) map.set(k, []);
+      map.get(k).push(w.kg);
+    });
+    const weeks = [...map.entries()].sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([monday, kgs]) => ({ monday, avg: kgs.reduce((a, b) => a + b, 0) / kgs.length, n: kgs.length }));
+    weeks.forEach((w, i) => { w.change = i ? w.avg - weeks[i - 1].avg : null; });
+    return weeks;
+  }
+
+  function getWaists(ws) { return (ws || []).filter(w => w.waist).map(w => ({ date: w.date, cm: w.waist })); }
+
+  function deltaCm(x) {
+    return `<span class="${x < 0 ? 'w-down' : x > 0 ? 'w-up' : ''}">${x > 0 ? '+' : x < 0 ? '−' : '±'}${Math.abs(round1(x))} cm</span>`;
+  }
+
+  function renderWeekAndWaist(st) {
+    const ws = st.ws || [];
+    const weeks = weeklySummary(ws).slice(-12);
+    el('wWeekTable').innerHTML = weeks.length
+      ? weeks.slice().reverse().map(w => `<div class="w-row">
+          <span class="w-date">sem. du ${esc(fmtShortDate(w.monday))}</span>
+          <span class="w-kg">${fmtKg(w.avg)}</span>
+          <span class="w-txt">${w.change === null ? '1re semaine' : deltaHtml(w.change)} · ${w.n} pesée${w.n > 1 ? 's' : ''}</span>
+        </div>`).join('')
+      : "<p style='color:var(--subtext);'>Le bilan par semaine apparaîtra après tes premières pesées.</p>";
+
+    const waists = getWaists(ws);
+    const lastW = waists[waists.length - 1];
+    el('wWaistHint').textContent = lastW
+      ? `Dernière mesure : ${lastW.cm} cm, il y a ${daysBetween(lastW.date, todayIso())} jour(s).`
+      : 'Mesure au niveau du nombril, debout, ventre relâché.';
+    el('wWaistSummary').innerHTML = lastW
+      ? `Dernière mesure : <strong>${lastW.cm} cm</strong> (${esc(fmtDate(lastW.date))})` +
+        (waists.length > 1 ? ` · depuis la 1re mesure (${waists[0].cm} cm) : ${deltaCm(lastW.cm - waists[0].cm)}` : '')
+      : "Aucune mesure pour l'instant : ajoute ton tour de taille une fois par semaine en même temps que ta pesée.";
+
+    if (typeof Chart === 'undefined' || currentPage !== 'weight') return;
+    const withChange = weeks.filter(w => w.change !== null);
+    if (wWeekInstance) wWeekInstance.destroy();
+    wWeekInstance = new Chart(el('wWeekChart').getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: withChange.map(w => fmtShortDate(w.monday)),
+        datasets: [{ data: withChange.map(w => round1(w.change)), backgroundColor: withChange.map(w => (w.change <= 0 ? '#00b894' : '#e74c3c')), borderRadius: 4 }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, animation: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => `${fmtSigned(c.parsed.y)} vs semaine précédente` } } },
+        scales: { y: { ticks: { callback: v => `${v} kg` } } }
+      }
+    });
+    if (wWaistInstance) wWaistInstance.destroy();
+    wWaistInstance = new Chart(el('wWaistChart').getContext('2d'), {
+      type: 'line',
+      data: {
+        labels: waists.map(w => fmtShortDate(w.date)),
+        datasets: [{ data: waists.map(w => w.cm), borderColor: '#0984e3', backgroundColor: 'rgba(9,132,227,0.12)', fill: true, tension: 0.3, pointRadius: 4 }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, animation: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => `${c.parsed.y} cm` } } },
+        scales: { y: { ticks: { callback: v => `${v} cm` } } }
+      }
+    });
+  }
+
   function renderWeightPage() {
     if (!el('pageWeight')) return;
     const st = computeWeightStats();
@@ -1956,8 +2042,6 @@
     setFieldIfIdle('wTargetDate', goal.targetDate);
     setFieldIfIdle('wHeight', goal.heightCm || '');
 
-    const weighedToday = st.ws.some(w => w.date === todayIso());
-    el('weightReminder').style.display = weighedToday ? 'none' : 'block';
     el('wCount').textContent = `${st.ws.length} pesée${st.ws.length > 1 ? 's' : ''}`;
 
     if (st.empty) {
@@ -1970,6 +2054,7 @@
       el('wMilestones').innerHTML = '';
       el('wHistory').innerHTML = "<p style='color:var(--subtext);'>Aucune pesée enregistrée.</p>";
       drawWeightCharts(st);
+      renderWeekAndWaist(st);
       return;
     }
 
@@ -2001,6 +2086,11 @@
     tiles += statCard(st.streak ? `🔥 ${st.streak} j` : '0 j', 'Pesées d\'affilée');
     tiles += statCard(fmtKg(st.minKg), 'Plus bas atteint');
     if (st.bmi) tiles += statCard(round1(st.bmi).toFixed(1), 'IMC actuel');
+    const waistsNow = getWaists(st.ws);
+    if (waistsNow.length) {
+      const lw = waistsNow[waistsNow.length - 1];
+      tiles += statCard(`${lw.cm} cm`, waistsNow.length > 1 ? `Tour de taille (${lw.cm - waistsNow[0].cm > 0 ? '+' : '−'}${Math.abs(round1(lw.cm - waistsNow[0].cm))} cm)` : 'Tour de taille');
+    }
     el('wStats').innerHTML = tiles;
 
     // --- verdict
@@ -2045,7 +2135,7 @@
       return `<div class="w-row">
         <span class="w-date">${esc(fmtShortDate(w.date))}</span>
         <span class="w-kg">${fmtKg(w.kg)}</span>
-        <span class="w-txt">${before ? deltaHtml(w.kg - before.kg) : 'départ'}${w.note ? ' · ' + esc(w.note) : ''}</span>
+        <span class="w-txt">${before ? deltaHtml(w.kg - before.kg) : 'départ'}${w.waist ? ' · 📏 ' + w.waist + ' cm' : ''}${w.note ? ' · ' + esc(w.note) : ''}</span>
         <span class="history-actions">
           <button onclick="editWeight('${esc(w.date)}')" title="Modifier">✏️</button>
           <button onclick="deleteWeight('${esc(w.date)}')" title="Supprimer">🗑️</button>
@@ -2054,6 +2144,7 @@
     }).join('');
 
     drawWeightCharts(st);
+    renderWeekAndWaist(st);
   }
 
   function drawWeightCharts(st) {
@@ -2122,15 +2213,21 @@
     const date = el('wDate').value || todayIso();
     const kg = parseFloat(String(el('wKg').value).replace(',', '.'));
     if (!isFinite(kg) || kg < 30 || kg > 300) { showToast('⚠️ Entre un poids valide, par ex. 102.4'); el('wKg').focus(); return; }
+    const waistRaw = String(el('wWaist').value).replace(',', '.').trim();
+    const waist = waistRaw ? parseFloat(waistRaw) : null;
+    if (waistRaw && (!isFinite(waist) || waist < 50 || waist > 200)) { showToast('⚠️ Tour de taille invalide (en cm, ex. 104)'); el('wWaist').focus(); return; }
     const before = computeWeightStats();
+    const sameDay = getWeights().find(w => w.date === date);
     const list = getWeights().filter(w => w.date !== date);
-    list.push({ date, kg: round1(kg), note: el('wNote').value.trim() });
+    // sans nouvelle mesure, on garde le tour de taille déjà noté ce jour-là
+    list.push({ date, kg: round1(kg), note: el('wNote').value.trim(), waist: waist !== null ? round1(waist) : (sameDay ? sameDay.waist : null) });
     if (!setWeights(list)) return;
     // première pesée : l'objectif démarre ce jour-là (95 kg dans 5 mois)
     if (!localStorage.getItem(WGOAL_KEY)) {
       store(WGOAL_KEY, JSON.stringify({ targetKg: DEFAULT_TARGET_KG, startDate: date, targetDate: addMonths(date, DEFAULT_MONTHS), auto: true }));
     }
     el('wKg').value = '';
+    el('wWaist').value = '';
     el('wNote').value = '';
     el('wDate').value = todayIso();
     const after = computeWeightStats();
@@ -2150,6 +2247,7 @@
     el('wDate').value = w.date;
     el('wKg').value = w.kg;
     el('wNote').value = w.note || '';
+    el('wWaist').value = w.waist || '';
     el('wKg').scrollIntoView({ behavior: 'smooth', block: 'center' });
     showToast('✏️ Corrige puis appuie sur Enregistrer');
   }
@@ -2180,9 +2278,8 @@
   function updateWeightButton() {
     const btn = el('pageBtn');
     if (!btn) return;
-    const weighed = getWeights().some(w => w.date === todayIso());
     btn.classList.toggle('on-weight', currentPage === 'weight');
-    btn.textContent = currentPage === 'weight' ? '🛡️ Guide' : `⚖️ Poids${weighed ? '' : ' 🔴'}`;
+    btn.textContent = currentPage === 'weight' ? '🛡️ Guide' : '⚖️ Poids';
     btn.title = currentPage === 'weight' ? 'Revenir au guide du jour' : 'Ouvrir le suivi du poids';
   }
 
@@ -2271,6 +2368,7 @@
 
   function renderDailyItems(items) {
     const container = el('dailyItemsList');
+    if (!container) return; // carte retirée du guide (octobre 2026)
     if (!items || items.length === 0) {
       container.innerHTML = "<p>Aucune suggestion spécifique.</p>";
       return;
