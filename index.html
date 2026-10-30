@@ -249,6 +249,7 @@
     .cal-cell.red, .sq.lg-red { background: #8e24aa; color: #fff; border-color: #8e24aa; }
     .cal-cell.caution, .sq.lg-caution { background: #ffcc80; color: #4e2a00; border-color: #fb8c00; }
     .cal-cell.great, .sq.lg-great { background: #43a047; color: #fff; border-color: #43a047; }
+    .cal-cell.good, .sq.lg-good { background: #c8e6c9; color: #1b5e20; border-color: #81c784; }
     .cal-cell.today { outline: 3px solid #1e88e5; outline-offset: 1px; font-weight: bold; }
     .cal-cell .dot { position: absolute; bottom: 2px; width: 5px; height: 5px; border-radius: 50%; }
     .dot.crisis { background: #c0392b; box-shadow: 0 0 0 1px #fff; }
@@ -535,12 +536,13 @@
       <span><i class="sq lg-predicted"></i>Règles prévues</span>
       <span><i class="sq lg-red"></i>Zone rouge</span>
       <span><i class="sq lg-caution"></i>Prudence</span>
+      <span><i class="sq lg-good"></i>Bonne journée</span>
       <span><i class="sq lg-great"></i>Super journée</span>
       <span><b style="color:#c0392b;">●</b> Crise</span>
       <span><b style="color:#6c5ce7;">●</b> Observation</span>
     </div>
     </div>
-    <p class="scene-caption">Touche un jour pour voir son observation ou en écrire une. Chaque jour reçoit une humeur prévue (sur 5) : celle du guide du jour, recalée sur la durée du cycle (la 2e moitié du cycle dure environ 14 jours), puis mélangée à moitié avec l'humeur réellement notée ces jours-là dans les cycles passés. Zone rouge : humeur prévue ≤ 1,6 ou au moins 2 crises notées ces jours-là. Prudence : ≤ 2,4 ou fenêtre de crise apprise de tes notes. Super journée : ≥ 4,6. Les mois suivants suivent tes derniers cycles (le plus récent compte double).</p>
+    <p class="scene-caption">Touche un jour pour voir son observation ou en écrire une. Chaque jour reçoit une humeur prévue (sur 5) : celle du guide du jour, recalée sur la durée du cycle (la 2e moitié du cycle dure environ 14 jours), puis mélangée à moitié avec l'humeur réellement notée ces jours-là dans les cycles passés. Zone rouge : humeur prévue ≤ 1,6 ou au moins 2 crises notées ces jours-là. Prudence : ≤ 2,4 ou fenêtre de crise apprise de tes notes. Bonne journée : ≥ 3,8. Super journée : ≥ 4,3. Les mois suivants suivent tes derniers cycles (le plus récent compte double).</p>
     </details>
   </div>
 
@@ -2534,7 +2536,7 @@
     return stats;
   }
 
-  // Humeur prévue (sur 5) et niveau du jour : 'red' (zone rouge), 'caution' (prudence), 'great' (super) ou null
+  // Humeur prévue (sur 5) et niveau du jour : 'red' (zone rouge), 'caution' (prudence), 'good' (bonne), 'great' (super) ou null
   function dayMoodForecast(day, len, stats, crit) {
     const g = guideDayFor(day, len);
     let score = guideFor(g).score;
@@ -2545,11 +2547,12 @@
     let level = null;
     if (score <= 1.6 || crises >= 2) level = 'red';
     else if (score <= 2.4) level = 'caution';
-    else if (score >= 4.6) level = 'great';
+    else if (score >= 4.3) level = 'great';
+    else if (score >= 3.8) level = 'good';
     // fenêtre de crise apprise de tes notes (la même que le bandeau d'alerte du guide)
     if (crit) {
       const since = ((day - crit) % len + len) % len;
-      if (since <= 4 && (level === null || level === 'great')) level = 'caution';
+      if (since <= 4 && (level === null || level === 'great' || level === 'good')) level = 'caution';
     }
     return { score, level };
   }
@@ -2627,7 +2630,7 @@
       else if (s.level) cls.push(s.level);
       if (iso === todayIso()) cls.push('today');
       const dot = s.crisis ? '<i class="dot crisis"></i>' : (s.obs ? '<i class="dot obs"></i>' : '');
-      const label = s.period ? 'Règles' : s.predicted ? 'Règles prévues' : ({ red: 'Zone rouge', caution: 'Prudence', great: 'Super journée' }[s.level] || '');
+      const label = s.period ? 'Règles' : s.predicted ? 'Règles prévues' : ({ red: 'Zone rouge', caution: 'Prudence', good: 'Bonne journée', great: 'Super journée' }[s.level] || '');
       const tip = `${fmtDate(iso)}${s.cycleDay ? ` · J${s.cycleDay}` : ''}${label ? ` · ${label}` : ''}${s.score ? ` · humeur prévue ${s.score.toFixed(1)}/5` : ''}`;
       html += `<button class="${cls.join(' ')}" onclick="openCalendarDay('${iso}')" title="${esc(tip)}"><span>${n}</span>${dot}</button>`;
     }
