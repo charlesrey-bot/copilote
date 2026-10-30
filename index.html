@@ -234,6 +234,30 @@
     .w-tip-day { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border); font-size: 0.86rem; }
     .chip.done { background: #00b894; color: #fff; border-color: #00b894; cursor: default; }
     .chip.todo { cursor: default; opacity: 0.65; }
+    /* Prévision, calendrier, bilans */
+    .next-period { margin: 8px 0 6px; font-size: 0.9rem; padding: 8px 10px; border-radius: 8px; background: rgba(255,118,117,0.12); line-height: 1.45; }
+    .cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .cal-nav button { width: auto; margin: 0; padding: 6px 14px; border-radius: 16px; }
+    .cal-nav strong { text-transform: capitalize; }
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+    .cal-head { text-align: center; font-size: 0.72rem; color: var(--subtext); font-weight: bold; padding-bottom: 2px; }
+    .cal-cell { position: relative; width: 100%; aspect-ratio: 1; margin: 0; padding: 0; border-radius: 10px; border: 1px solid var(--border); background: var(--input-bg); color: var(--text); font-size: 0.85rem; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+    .cal-cell.empty { border: none; background: transparent; cursor: default; }
+    .cal-cell.period { background: #ff7675; color: #fff; border-color: #ff7675; }
+    .cal-cell.predicted { background: rgba(255,118,117,0.18); border: 2px dashed #ff7675; }
+    .cal-cell.sensitive { background: rgba(230,126,34,0.22); border-color: rgba(230,126,34,0.5); }
+    .cal-cell.today { outline: 3px solid #6c5ce7; outline-offset: 1px; font-weight: bold; }
+    .cal-cell .dot { position: absolute; bottom: 3px; width: 6px; height: 6px; border-radius: 50%; }
+    .dot.crisis { background: #d63031; }
+    .dot.obs { background: #6c5ce7; }
+    .cal-cell.period .dot.obs { background: #fff; }
+    .cal-legend { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 0.75rem; color: var(--subtext); margin-top: 10px; }
+    .cal-legend .sq { display: inline-block; width: 11px; height: 11px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; }
+    .weekly-card { border: 2px solid #6c5ce7; }
+    .w-zoom { display: flex; gap: 6px; margin-bottom: 8px; }
+    .w-zoom button { width: auto; margin: 0; padding: 5px 12px; border-radius: 14px; font-size: 0.8rem; cursor: pointer; }
+    .w-zoom button.on { background: #6c5ce7; color: #fff; border-color: #6c5ce7; }
+    .chip .ms-date { opacity: 0.75; font-size: 0.72rem; margin-left: 4px; }
     details.events-dropdown { border: 1px solid var(--border); border-radius: 12px; padding: 0 12px; margin-top: 10px; background: var(--input-bg); }
     details.events-dropdown summary { cursor: pointer; padding: 12px 0; font-weight: bold; font-size: 0.95rem; list-style-position: inside; }
     details.journal-dropdown summary { font-size: 1.1rem; }
@@ -461,11 +485,19 @@
     </div>
   </div>
 
+  <!-- BILAN DE LA SEMAINE PASSÉE (le lundi) -->
+  <div id="weeklyGuide" class="card weekly-card" style="display:none;">
+    <h2>📆 Ta semaine passée</h2>
+    <div id="weeklyGuideText"></div>
+    <button class="btn-icon" onclick="dismissWeekly('weeklyGuideSeen','weeklyGuide')" style="margin-top:10px; width:auto;">👍 Vu</button>
+  </div>
+
   <!-- 1. TABLEAU DE BORD DU JOUR -->
   <div class="card" style="margin-top: 10px;">
     <h2 id="dashHeaderTitle">📊 Guide Tactique du Jour</h2>
     <p style="margin-bottom:5px;"><span id="labelDay">Jour du cycle</span> : <strong id="currentDay" style="font-size:1.1rem;">-</strong></p>
     <p style="margin-top:0; margin-bottom: 5px;">Phase : <span id="currentPhase" class="status-badge" style="background:#ccc;">-</span></p>
+    <p id="nextPeriodLine" class="next-period" style="display:none;"></p>
     
     <div id="intimacyTip" class="advice-box intimacy-box"><strong>💖 Tendance Intimité & Complicité :</strong> -</div>
     <div id="doTip" class="advice-box do-box"><strong>👍 À FAIRE :</strong> Configurez le cycle tout en bas 👇</div>
@@ -480,6 +512,25 @@
       <canvas id="forecastChart"></canvas>
     </div>
     <div id="forecastList" style="margin-top: 15px;"></div>
+  </div>
+
+  <!-- CALENDRIER DU MOIS -->
+  <div class="card" id="cardCalendar">
+    <h2>🗓️ Calendrier</h2>
+    <div class="cal-nav">
+      <button class="btn-icon" onclick="moveCalendar(-1)" title="Mois précédent">◀</button>
+      <strong id="calTitle"></strong>
+      <button class="btn-icon" onclick="moveCalendar(1)" title="Mois suivant">▶</button>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+    <div class="cal-legend">
+      <span><i class="sq" style="background:#ff7675;"></i>Règles</span>
+      <span><i class="sq" style="background:rgba(255,118,117,0.25); border:1px dashed #ff7675;"></i>Règles prévues</span>
+      <span><i class="sq" style="background:rgba(230,126,34,0.4);"></i>Zone sensible</span>
+      <span><b style="color:#d63031;">●</b> Crise</span>
+      <span><b style="color:#6c5ce7;">●</b> Observation</span>
+    </div>
+    <p class="scene-caption">Touche un jour pour voir son observation ou en écrire une.</p>
   </div>
 
   <!-- 3. PLANIFICATEUR DE VACANCES & ÉVÉNEMENTS -->
@@ -499,6 +550,12 @@
     <div class="chart-container">
       <canvas id="moodChart"></canvas>
     </div>
+  </div>
+
+  <!-- BILAN DU DERNIER CYCLE -->
+  <div class="card" id="cardCycleSummary">
+    <h2>📋 Bilan du dernier cycle <span id="cycleSummaryBadge"></span></h2>
+    <div id="cycleSummary"></div>
   </div>
 
   <!-- 6. JOURNAL D'OBSERVATION ET CASES DÉBUT/FIN DES RÈGLES -->
@@ -610,6 +667,7 @@
     <div id="behaviorAnalysisResult" class="advice-box" style="margin-top:12px; font-size:0.85rem; line-height:1.5;">
       Saisissez des observations pour affiner l'analyse comportementale.
     </div>
+    <div id="triggerInsights" class="advice-box" style="margin-top:10px; font-size:0.85rem; line-height:1.5; border-left-color:#e67e22;"></div>
 
     <!-- TABLEAU D'ANALYSE DES CYCLES PASSÉS -->
     <h3 style="font-size:0.95rem; margin-top:18px; margin-bottom:6px; color:var(--text);">📊 Tableau Récapitulatif des Cycles</h3>
@@ -713,6 +771,13 @@
 <!-- ===================== PAGE 2 : SUIVI DU POIDS ===================== -->
 <div id="pageWeight" style="display:none;">
 
+  <!-- Bilan de la semaine passée (le lundi) -->
+  <div id="weeklyWeight" class="card weekly-card" style="display:none;">
+    <h2>📆 Ta semaine passée</h2>
+    <div id="weeklyWeightText"></div>
+    <button class="btn-icon" onclick="dismissWeekly('weeklyWeightSeen','weeklyWeight')" style="margin-top:10px; width:auto;">👍 Vu</button>
+  </div>
+
   <!-- Saisie + mini-graphique à côté -->
   <div class="card">
     <h2>⚖️ Poids du jour</h2>
@@ -756,7 +821,14 @@
   <!-- Graphique complet -->
   <div class="card">
     <h2>📈 Ma courbe</h2>
+    <div class="w-zoom" id="wZoom">
+      <button class="btn-icon" data-z="7" onclick="setWeightZoom('7')">7 j</button>
+      <button class="btn-icon" data-z="30" onclick="setWeightZoom('30')">30 j</button>
+      <button class="btn-icon" data-z="90" onclick="setWeightZoom('90')">90 j</button>
+      <button class="btn-icon" data-z="all" onclick="setWeightZoom('all')">Tout</button>
+    </div>
     <div class="chart-container" style="height:270px;"><canvas id="wChart"></canvas></div>
+    <div id="wCompare" class="advice-box" style="margin-top:10px; font-size:0.88rem;"></div>
     <p class="scene-caption">Points : pesées · trait vert : moyenne sur 7 jours · pointillés gris : chemin prévu jusqu'à l'objectif · pointillés violets : où mène la tendance actuelle · ligne rouge : objectif.</p>
   </div>
 
@@ -2040,6 +2112,8 @@
     const st = computeWeightStats();
     const goal = st.goal;
     el('wCoach').innerHTML = coachHtml(st);
+    renderWeeklyWeight();
+    renderWeightCompare(st);
     el('wGoalTitle').textContent = `${round1(goal.targetKg)} kg le ${fmtDate(goal.targetDate)}`;
     if (!el('wDate').value) el('wDate').value = todayIso();
     setFieldIfIdle('wTargetKg', round1(goal.targetKg));
@@ -2129,10 +2203,21 @@
     steps.push({ label: '½ chemin', kg: st.startKg - (st.startKg - goal.targetKg) / 2 });
     steps.push({ label: `🎯 ${round1(goal.targetKg)} kg`, kg: goal.targetKg });
     steps.sort((a, b) => b.kg - a.kg);
+    // date prévue : au rythme actuel (moyenne 7 jours + tendance), sinon selon le plan
+    const planDays = Math.max(1, daysBetween(goal.startDate, goal.targetDate));
+    const projDate = kg => {
+      if (st.slope !== null && st.slope < -0.005 && st.current > kg) return { date: addDays(st.last.date, Math.ceil((st.current - kg) / -st.slope)), plan: false };
+      const total = st.startKg - goal.targetKg;
+      if (total <= 0) return null;
+      return { date: addDays(goal.startDate, Math.round(((st.startKg - kg) / total) * planDays)), plan: true };
+    };
+    const shortD = iso => parseIso(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
     el('wMilestones').innerHTML = steps.map(s => {
       const done = st.latest <= s.kg + 1e-9;
-      return `<span class="chip ${done ? 'done' : 'todo'}">${done ? '✅ ' : ''}${esc(s.label)}</span>`;
-    }).join('');
+      const pd = done ? null : projDate(s.kg);
+      const when = pd ? `<span class="ms-date">≈ ${esc(shortD(pd.date))}${pd.plan ? ' (plan)' : ''}</span>` : '';
+      return `<span class="chip ${done ? 'done' : 'todo'}">${done ? '✅ ' : ''}${esc(s.label)}${when}</span>`;
+    }).join('') + `<p class="scene-caption" style="width:100%;">Dates prévues ${st.slope !== null && st.slope < -0.005 ? 'à ton rythme actuel (3 dernières semaines)' : 'selon le plan (« plan ») tant que la tendance n\'est pas connue ou ne baisse pas'}.</p>`;
 
     // --- historique (plus récent en premier)
     el('wHistory').innerHTML = ws.slice().reverse().map((w, i, arr) => {
@@ -2192,6 +2277,18 @@
     }
     datasets.push({ label: 'Objectif', data: [{ x: xMin, y: goal.targetKg }, { x: xMax, y: goal.targetKg }], borderColor: '#e74c3c', borderWidth: 1.5, pointRadius: 0 });
 
+    // Zoom : 7 / 30 / 90 derniers jours, ou tout jusqu'à la date visée
+    const zoom = localStorage.getItem('wZoom') || 'all';
+    document.querySelectorAll('#wZoom button').forEach(b => b.classList.toggle('on', b.dataset.z === zoom));
+    let xMinZ = xMin, xMaxZ = xMax, yRange = {};
+    if (zoom !== 'all' && ws.length) {
+      const n = parseInt(zoom, 10);
+      xMinZ = lastIdx - n + 1;
+      xMaxZ = lastIdx + Math.max(1, Math.round(n / 10));
+      const vis = ws.filter(w => { const x = daysBetween(start, w.date); return x >= xMinZ && x <= xMaxZ; }).map(w => w.kg);
+      if (vis.length) yRange = { min: Math.floor(Math.min(...vis) - 1), max: Math.ceil(Math.max(...vis) + 1) };
+    }
+
     if (wChartInstance) wChartInstance.destroy();
     wChartInstance = new Chart(el('wChart').getContext('2d'), {
       type: 'line',
@@ -2207,11 +2304,31 @@
           } }
         },
         scales: {
-          x: { type: 'linear', min: xMin, max: xMax, ticks: { maxTicksLimit: 6, callback: v => parseIso(addDays(start, Math.round(v))).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) } },
-          y: { ticks: { callback: v => `${v} kg` } }
+          x: { type: 'linear', min: xMinZ, max: xMaxZ, ticks: { maxTicksLimit: 6, callback: v => parseIso(addDays(start, Math.round(v))).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) } },
+          y: { ...yRange, ticks: { callback: v => `${v} kg` } }
         }
       }
     });
+  }
+
+  function setWeightZoom(z) {
+    store('wZoom', z);
+    drawWeightCharts(computeWeightStats());
+  }
+
+  // 7 derniers jours (jusqu'à la dernière pesée) comparés aux 7 jours d'avant
+  function renderWeightCompare(st) {
+    const box = el('wCompare');
+    if (!box) return;
+    if (st.empty) { box.style.display = 'none'; return; }
+    const lastD = st.last.date;
+    const avgOf = (a, b) => { const sel = st.ws.filter(w => w.date >= a && w.date <= b); return sel.length ? sel.reduce((x, w) => x + w.kg, 0) / sel.length : null; };
+    const now = avgOf(addDays(lastD, -6), lastD);
+    const prev = avgOf(addDays(lastD, -13), addDays(lastD, -7));
+    box.style.display = 'block';
+    box.innerHTML = prev === null
+      ? `📊 <strong>7 derniers jours :</strong> ${fmtKg(now)} en moyenne. La comparaison avec les 7 jours d'avant apparaîtra après 2 semaines de pesées.`
+      : `📊 <strong>7 derniers jours :</strong> ${fmtKg(now)} · <strong>7 jours d'avant :</strong> ${fmtKg(prev)} → ${deltaHtml(now - prev)}`;
   }
 
   function saveWeight() {
@@ -2302,8 +2419,361 @@
 
   function togglePage() { showPage(currentPage === 'weight' ? 'main' : 'weight'); }
 
+  /* =====================================================================
+     GUIDE : prévision des règles, calendrier du mois, bilan de cycle,
+     déclencheurs des jours difficiles, bilan de la semaine (le lundi)
+     ===================================================================== */
+  let calMonth = null; // mois affiché dans le calendrier, 'AAAA-MM'
+
+  // Dates de début de règles connues : cases « Début des règles » + date de la configuration
+  function periodStartsHistory() {
+    const starts = new Set(datedLogs().filter(l => l.isPeriodStart).map(l => l.logDateIso));
+    const cur = localStorage.getItem('startDate');
+    if (cur) starts.add(cur);
+    return [...starts].sort();
+  }
+
+  function periodEndsHistory() {
+    const ends = new Set(datedLogs().filter(l => l.isPeriodEnd).map(l => l.logDateIso));
+    const cur = localStorage.getItem('endDate');
+    if (cur) ends.add(cur);
+    return [...ends].sort();
+  }
+
+  function cycleLengthsHistory(starts) {
+    const out = [];
+    for (let i = 1; i < starts.length; i++) {
+      const d = daysBetween(starts[i - 1], starts[i]);
+      if (d >= 18 && d <= 45) out.push(d);
+    }
+    return out;
+  }
+
+  // Fin des règles d'un cycle donné (entre son début et le début suivant), sinon null
+  function periodEndFor(start, nextStart, ends) {
+    return ends.find(e => e >= start && (!nextStart || e < nextStart)) || null;
+  }
+
+  function periodLengthEstimate() {
+    const starts = periodStartsHistory();
+    const ends = periodEndsHistory();
+    const lens = [];
+    starts.forEach((s, i) => {
+      const e = periodEndFor(s, starts[i + 1], ends);
+      if (e) { const n = daysBetween(s, e) + 1; if (n >= 2 && n <= 10) lens.push(n); }
+    });
+    return lens.length ? Math.round(lens.reduce((a, b) => a + b, 0) / lens.length) : 5;
+  }
+
+  // Prochaines règles : moyenne des 6 derniers cycles ± leur écart (au moins 1 jour)
+  function nextPeriodForecast() {
+    const starts = periodStartsHistory();
+    if (!starts.length) return null;
+    const last = starts[starts.length - 1];
+    const lens = cycleLengthsHistory(starts).slice(-6);
+    let mean, spread;
+    if (lens.length >= 2) {
+      mean = lens.reduce((a, b) => a + b, 0) / lens.length;
+      const sd = Math.sqrt(lens.reduce((a, b) => a + (b - mean) * (b - mean), 0) / lens.length);
+      spread = Math.max(1, Math.round(sd));
+    } else {
+      mean = getCycleLength();
+      spread = 2;
+    }
+    const likely = addDays(last, Math.round(mean));
+    return { last, likely, from: addDays(likely, -spread), to: addDays(likely, spread), mean, basedOn: lens.length, periodLen: periodLengthEstimate() };
+  }
+
+  function renderNextPeriod() {
+    const line = el('nextPeriodLine');
+    if (!line) return;
+    const f = nextPeriodForecast();
+    if (!f || isStealthMode) { line.style.display = 'none'; return; }
+    const today = todayIso();
+    let txt;
+    if (today < f.from) {
+      txt = `🔮 <strong>Prochaines règles : dans ${daysBetween(today, f.from)} à ${daysBetween(today, f.to)} jours</strong> (le plus probable : ${esc(fmtShortDate(f.likely))}).`;
+    } else if (today <= f.to) {
+      txt = `🔮 <strong>Prochaines règles attendues ces jours-ci</strong> (le plus probable : ${esc(fmtShortDate(f.likely))}).`;
+    } else {
+      txt = `⏳ <strong>Retard de ${daysBetween(f.to, today)} jour${daysBetween(f.to, today) > 1 ? 's' : ''}</strong> sur la prévision (attendues au plus tard le ${esc(fmtShortDate(f.to))}). Coche « Début des règles » dans l'observation du jour où elles arrivent.`;
+    }
+    txt += f.basedOn >= 2
+      ? `<br><span class="scene-caption">D'après les ${f.basedOn} derniers cycles notés (moyenne ${Math.round(f.mean)} jours).</span>`
+      : `<br><span class="scene-caption">Estimation sur la durée de cycle configurée : coche « Début des règles » à chaque cycle pour l'affiner.</span>`;
+    line.innerHTML = txt;
+    line.style.display = 'block';
+  }
+
+  // Statut de chaque jour d'une période : règles, règles prévues, zone sensible, crise, observation
+  function dayStatusMap(fromIso, toIso) {
+    const map = {};
+    const get = iso => (map[iso] = map[iso] || {});
+    datedLogs().forEach(l => {
+      if (l.logDateIso < fromIso || l.logDateIso > toIso) return;
+      const s = get(l.logDateIso);
+      s.obs = true;
+      if (l.isCrisis) s.crisis = true;
+    });
+    const starts = periodStartsHistory();
+    const ends = periodEndsHistory();
+    const plen = periodLengthEstimate();
+    starts.forEach((st, i) => {
+      const next = starts[i + 1];
+      let end = periodEndFor(st, next, ends) || addDays(st, plen - 1);
+      if (next && end >= next) end = addDays(next, -1);
+      for (let d = st; d <= end; d = addDays(d, 1)) if (d >= fromIso && d <= toIso) get(d).period = true;
+    });
+    const f = nextPeriodForecast();
+    if (f) {
+      for (let d = f.likely; d <= addDays(f.likely, f.periodLen - 1); d = addDays(d, 1)) {
+        if (d >= fromIso && d <= toIso && !(map[d] && map[d].period)) get(d).predicted = true;
+      }
+    }
+    if (starts.length) {
+      const len = getCycleLength();
+      for (let d = (fromIso > starts[0] ? fromIso : starts[0]); d <= toIso; d = addDays(d, 1)) {
+        const day = getCycleDayForDate(d);
+        if (!day) continue;
+        const since = daysSinceCrisisStart(day, len);
+        if (since <= 4 || since >= len - 3) get(d).sensitive = true;
+      }
+    }
+    return map;
+  }
+
+  function renderCalendar() {
+    const box = el('calGrid');
+    if (!box) return;
+    if (!calMonth) calMonth = todayIso().slice(0, 7);
+    const first = `${calMonth}-01`;
+    const d0 = parseIso(first);
+    const daysInMonth = new Date(d0.getFullYear(), d0.getMonth() + 1, 0).getDate();
+    const lead = (d0.getDay() + 6) % 7; // lundi en premier
+    const map = dayStatusMap(first, addDays(first, daysInMonth - 1));
+    el('calTitle').textContent = d0.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+    let html = ['L', 'M', 'M', 'J', 'V', 'S', 'D'].map(x => `<div class="cal-head">${x}</div>`).join('');
+    for (let i = 0; i < lead; i++) html += '<div class="cal-cell empty"></div>';
+    for (let n = 1; n <= daysInMonth; n++) {
+      const iso = `${calMonth}-${String(n).padStart(2, '0')}`;
+      const s = map[iso] || {};
+      const cls = ['cal-cell'];
+      if (s.period) cls.push('period');
+      else if (s.predicted) cls.push('predicted');
+      else if (s.sensitive) cls.push('sensitive');
+      if (iso === todayIso()) cls.push('today');
+      const dot = s.crisis ? '<i class="dot crisis"></i>' : (s.obs ? '<i class="dot obs"></i>' : '');
+      html += `<button class="${cls.join(' ')}" onclick="openCalendarDay('${iso}')" title="${esc(fmtDate(iso))}"><span>${n}</span>${dot}</button>`;
+    }
+    box.innerHTML = html;
+  }
+
+  function moveCalendar(delta) {
+    const d = parseIso(`${calMonth || todayIso().slice(0, 7)}-01`);
+    d.setMonth(d.getMonth() + delta);
+    calMonth = toIso(d).slice(0, 7);
+    renderCalendar();
+  }
+
+  function openCalendarDay(iso) {
+    const log = getLogs().filter(l => l.logDateIso === iso).sort(compareLogsNewestFirst)[0];
+    if (log) { editLog(log.id); return; }
+    startNewObservation(iso);
+    el('logDate').closest('.card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    showToast(`📝 Nouvelle observation pour le ${fmtDate(iso)}`);
+  }
+
+  // Libellé lisible d'un symptôme ou d'un geste (texte de la puce correspondante)
+  function chipLabel(val) {
+    const c = [...document.querySelectorAll('.chip[data-val]')].find(x => x.dataset.val === val);
+    return c ? c.textContent.trim() : val;
+  }
+
+  function isHardDay(l) { return !!(l.isCrisis || (l.moodVal && l.moodVal <= 2)); }
+
+  // Bilans des cycles complets (entre deux débuts de règles)
+  function cycleSummaries() {
+    const starts = periodStartsHistory();
+    const ends = periodEndsHistory();
+    const logs = datedLogs();
+    const out = [];
+    for (let i = 1; i < starts.length; i++) {
+      const s = starts[i - 1], next = starts[i];
+      const len = daysBetween(s, next);
+      if (len < 18 || len > 45) continue;
+      const inC = logs.filter(l => l.logDateIso >= s && l.logDateIso < next);
+      const moods = inC.filter(l => l.moodVal).map(l => l.moodVal);
+      const hardDays = [...new Set(inC.filter(isHardDay).map(l => daysBetween(s, l.logDateIso) + 1))].sort((a, b) => a - b);
+      const tagScores = {};
+      inC.filter(l => l.moodVal).forEach(l => (l.tags || []).forEach(t => { (tagScores[t] = tagScores[t] || []).push(l.moodVal); }));
+      let bestTag = null, bestAvg = 0;
+      Object.keys(tagScores).forEach(t => { const a = tagScores[t].reduce((x, y) => x + y, 0) / tagScores[t].length; if (a > bestAvg) { bestAvg = a; bestTag = t; } });
+      const pEnd = periodEndFor(s, next, ends);
+      out.push({
+        start: s, last: addDays(next, -1), len,
+        periodLen: pEnd ? daysBetween(s, pEnd) + 1 : null,
+        obs: inC.length,
+        crises: inC.filter(l => l.isCrisis).length,
+        avgMood: moods.length ? moods.reduce((a, b) => a + b, 0) / moods.length : null,
+        hardDays, bestTag, bestAvg
+      });
+    }
+    return out;
+  }
+
+  function cmp(now, before, unit, lowerIsBetter) {
+    if (before === null || before === undefined || now === null || now === undefined) return '';
+    const d = now - before;
+    if (Math.abs(d) < 0.05) return '';
+    const good = lowerIsBetter ? d < 0 : d > 0;
+    const txt = `${d > 0 ? '+' : '−'}${Math.abs(Math.round(d * 10) / 10)}${unit}`;
+    return ` <span class="${good ? 'w-down' : 'w-up'}">(${txt} vs cycle d'avant)</span>`;
+  }
+
+  function renderCycleSummary() {
+    const box = el('cycleSummary');
+    if (!box) return;
+    el('cardCycleSummary').style.display = isStealthMode ? 'none' : '';
+    const all = cycleSummaries();
+    const badge = el('cycleSummaryBadge');
+    if (!all.length) {
+      badge.textContent = '';
+      box.innerHTML = "<p style='color:var(--subtext);'>Le bilan apparaît dès que deux débuts de règles ont été notés (case « 🩸 Début des règles » dans l'observation du jour).</p>";
+      return;
+    }
+    const c = all[all.length - 1];
+    const p = all.length > 1 ? all[all.length - 2] : null;
+    const starts = periodStartsHistory();
+    badge.textContent = daysBetween(starts[starts.length - 1], todayIso()) <= 5 ? '🆕' : '';
+    const hard = c.hardDays.length ? c.hardDays.map(d => `J${d}`).join(', ') : 'aucun';
+    box.innerHTML = `
+      <div class="scene-caption" style="margin-top:0;">Du ${esc(fmtDate(c.start))} au ${esc(fmtDate(c.last))}</div>
+      <div class="stat-badge-grid">
+        ${statCard(`${c.len} j`, 'Durée du cycle' + (p ? ` (${p.len} j avant)` : ''))}
+        ${statCard(c.periodLen ? `${c.periodLen} j` : '—', 'Durée des règles')}
+        ${statCard(String(c.crises), 'Crises notées' + (p ? ` (${p.crises} avant)` : ''), c.crises ? '#e74c3c' : '#00b894')}
+        ${statCard(c.avgMood !== null ? `${c.avgMood.toFixed(1)}/5` : '—', 'Humeur moyenne')}
+      </div>
+      <div class="advice-box" style="margin-top:10px; font-size:0.88rem; line-height:1.5;">
+        😣 <strong>Jours difficiles</strong> (crise ou humeur 1-2) : ${esc(hard)}<br>
+        ${c.bestTag ? `💪 <strong>Geste qui a le mieux marché :</strong> ${esc(chipLabel(c.bestTag))} (humeur moyenne ${c.bestAvg.toFixed(1)}/5 ces jours-là)<br>` : ''}
+        📝 ${c.obs} observation${c.obs > 1 ? 's' : ''} sur ce cycle${cmp(c.crises, p ? p.crises : null, ' crise(s)', true)}${cmp(c.avgMood, p ? p.avgMood : null, ' d\'humeur', false)}
+      </div>`;
+  }
+
+  // Ce qui revient les jours difficiles : période du cycle, symptômes, mots des notes
+  function renderTriggerInsights() {
+    const box = el('triggerInsights');
+    if (!box) return;
+    const logs = datedLogs();
+    const hard = logs.filter(isHardDay);
+    const calm = logs.filter(l => !isHardDay(l));
+    if (hard.length < 3) {
+      box.innerHTML = `🔎 <strong>Ce qui revient les jours difficiles :</strong> il faut au moins 3 jours difficiles notés (crise ou humeur 1-2) pour repérer une tendance. Pour l'instant : ${hard.length}.`;
+      return;
+    }
+    const lines = [];
+    const len = getCycleLength();
+    const days = hard.map(l => l.cycleDay).filter(Boolean);
+    if (days.length >= 3) {
+      let best = { from: 1, count: 0 };
+      for (let f = 1; f <= len; f++) {
+        const c = days.filter(d => ((d - f + len) % len) < 4).length;
+        if (c > best.count) best = { from: f, count: c };
+      }
+      if (best.count >= 2) {
+        // bornes réelles : du premier au dernier jour difficile de la fenêtre de 4 jours
+        const inWin = days.filter(d => ((d - best.from + len) % len) < 4).map(d => (d - best.from + len) % len);
+        const a = ((best.from - 1 + Math.min(...inWin)) % len) + 1;
+        const b = ((best.from - 1 + Math.max(...inWin)) % len) + 1;
+        lines.push(`📅 <strong>${best.count} jours difficiles sur ${days.length}</strong> tombent ${a === b ? `le J${a}` : `entre J${a} et J${b}`}.`);
+      }
+    }
+    const share = (arr, fn) => (arr.length ? arr.filter(fn).length / arr.length : 0);
+    const syms = new Set();
+    hard.forEach(l => (l.symptoms || []).forEach(v => syms.add(v)));
+    [...syms]
+      .map(v => ({ v, h: share(hard, l => (l.symptoms || []).includes(v)), c: share(calm, l => (l.symptoms || []).includes(v)) }))
+      .filter(x => x.h >= 0.3 && x.h > x.c + 0.15)
+      .sort((a, b) => b.h - a.h).slice(0, 3)
+      .forEach(x => lines.push(`⚡ <strong>${esc(chipLabel(x.v))}</strong> noté dans ${Math.round(x.h * 100)} % des jours difficiles (contre ${Math.round(x.c * 100)} % les autres jours).`));
+    const stop = new Set(['dans', 'avec', 'pour', 'elle', 'mais', 'tout', 'très', 'plus', 'cette', 'nous', 'vous', 'sans', 'comme', 'était', 'avait', 'fait', 'être', 'avoir', 'leur', 'sont', 'quand', 'après', 'avant', 'encore', 'aussi', 'bien', 'peu']);
+    const wordsOf = l => new Set((`${l.note || ''} ${l.crisisNote || ''}`.toLowerCase().match(/[a-zàâæçéèêëîïôœùûüÿ]+/gi) || []).filter(w => w.length > 3 && !stop.has(w)));
+    const hw = {}, cw = {};
+    hard.forEach(l => wordsOf(l).forEach(w => { hw[w] = (hw[w] || 0) + 1; }));
+    calm.forEach(l => wordsOf(l).forEach(w => { cw[w] = (cw[w] || 0) + 1; }));
+    Object.keys(hw)
+      .filter(w => hw[w] >= 2 && hw[w] / hard.length > (cw[w] || 0) / Math.max(1, calm.length) + 0.15)
+      .sort((a, b) => hw[b] - hw[a]).slice(0, 3)
+      .forEach(w => lines.push(`🗒️ Le mot « <strong>${esc(w)}</strong> » revient dans ${hw[w]} notes de jours difficiles.`));
+    if (!lines.length) lines.push("Rien ne ressort encore nettement : continue à noter symptômes et détails les jours difficiles.");
+    box.innerHTML = `🔎 <strong>Ce qui revient les jours difficiles</strong> (${hard.length} jours : crise ou humeur 1-2) :<br>${lines.join('<br>')}`;
+  }
+
+  // ----- Bilan de la semaine passée, affiché le lundi en haut de chaque page -----
+  function lastWeekRange() {
+    const mon = mondayOf(todayIso());
+    return { from: addDays(mon, -7), to: addDays(mon, -1) };
+  }
+  function weeklyCardDue(key) { return new Date().getDay() === 1 && localStorage.getItem(key) !== todayIso(); }
+  function dismissWeekly(key, id) { store(key, todayIso()); el(id).style.display = 'none'; }
+
+  function renderWeeklyGuide() {
+    const box = el('weeklyGuide');
+    if (!box) return;
+    const { from, to } = lastWeekRange();
+    const logs = datedLogs().filter(l => l.logDateIso >= from && l.logDateIso <= to);
+    if (!weeklyCardDue('weeklyGuideSeen') || !logs.length || isStealthMode) { box.style.display = 'none'; return; }
+    const moods = logs.filter(l => l.moodVal).map(l => l.moodVal);
+    const crises = logs.filter(l => l.isCrisis).length;
+    const tagScores = {};
+    logs.filter(l => l.moodVal).forEach(l => (l.tags || []).forEach(t => { (tagScores[t] = tagScores[t] || []).push(l.moodVal); }));
+    let best = null, bestAvg = 0;
+    Object.keys(tagScores).forEach(t => { const a = tagScores[t].reduce((x, y) => x + y, 0) / tagScores[t].length; if (a > bestAvg) { bestAvg = a; best = t; } });
+    el('weeklyGuideText').innerHTML = `<div class="scene-caption" style="margin-top:0;">Du ${esc(fmtShortDate(from))} au ${esc(fmtShortDate(to))}</div>
+      <div class="stat-badge-grid">
+        ${statCard(String(logs.length), 'Observations')}
+        ${statCard(moods.length ? `${(moods.reduce((a, b) => a + b, 0) / moods.length).toFixed(1)}/5` : '—', 'Humeur moyenne')}
+        ${statCard(String(crises), 'Crises', crises ? '#e74c3c' : '#00b894')}
+        ${statCard(best ? esc(chipLabel(best)) : '—', 'Geste le plus efficace')}
+      </div>`;
+    box.style.display = 'block';
+  }
+
+  function renderWeeklyWeight() {
+    const box = el('weeklyWeight');
+    if (!box) return;
+    const ws = getWeights();
+    const { from, to } = lastWeekRange();
+    const week = ws.filter(w => w.date >= from && w.date <= to);
+    if (!weeklyCardDue('weeklyWeightSeen') || !week.length) { box.style.display = 'none'; return; }
+    const avg = week.reduce((a, w) => a + w.kg, 0) / week.length;
+    const before = ws.filter(w => w.date >= addDays(from, -7) && w.date < from);
+    const avgBefore = before.length ? before.reduce((a, w) => a + w.kg, 0) / before.length : null;
+    const waists = week.filter(w => w.waist);
+    el('weeklyWeightText').innerHTML = `<div class="scene-caption" style="margin-top:0;">Du ${esc(fmtShortDate(from))} au ${esc(fmtShortDate(to))}</div>
+      <div class="stat-badge-grid">
+        ${statCard(fmtKg(avg), 'Moyenne de la semaine')}
+        ${statCard(avgBefore !== null ? deltaHtml(avg - avgBefore) : '—', 'vs semaine d\'avant')}
+        ${statCard(`${week.length}/7`, 'Jours de pesée')}
+        ${statCard(fmtKg(Math.min(...week.map(w => w.kg))), 'Plus bas de la semaine')}
+        ${waists.length ? statCard(`${waists[waists.length - 1].waist} cm`, 'Tour de taille') : ''}
+      </div>`;
+    box.style.display = 'block';
+  }
+
+  function renderCycleExtras() {
+    if (el('cardCalendar')) el('cardCalendar').style.display = isStealthMode ? 'none' : '';
+    renderNextPeriod();
+    renderCalendar();
+    renderCycleSummary();
+    renderTriggerInsights();
+    renderWeeklyGuide();
+  }
+
   function updateDashboard() {
     renderFamilyEvents();
+    renderCycleExtras();
     updateWeightButton();
     updateBackupUI();
     lastRenderDay = todayIso();
