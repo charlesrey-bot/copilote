@@ -239,20 +239,22 @@
     .cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
     .cal-nav button { width: auto; margin: 0; padding: 6px 14px; border-radius: 16px; }
     .cal-nav strong { text-transform: capitalize; }
-    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
     .cal-head { text-align: center; font-size: 0.72rem; color: var(--subtext); font-weight: bold; padding-bottom: 2px; }
-    .cal-cell { position: relative; width: 100%; aspect-ratio: 1; margin: 0; padding: 0; border-radius: 10px; border: 1px solid var(--border); background: var(--input-bg); color: var(--text); font-size: 0.85rem; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+    .cal-wrap { max-width: 300px; margin: 10px auto 0; }
+    .cal-cell { position: relative; width: 100%; aspect-ratio: 1; margin: 0; padding: 0; border-radius: 7px; border: 1px solid var(--border); background: var(--input-bg); color: var(--text); font-size: 0.75rem; display: flex; align-items: center; justify-content: center; cursor: pointer; }
     .cal-cell.empty { border: none; background: transparent; cursor: default; }
-    .cal-cell.period { background: #ff7675; color: #fff; border-color: #ff7675; }
-    .cal-cell.predicted { background: rgba(255,118,117,0.18); border: 2px dashed #ff7675; }
-    .cal-cell.sensitive { background: rgba(230,126,34,0.22); border-color: rgba(230,126,34,0.5); }
-    .cal-cell.today { outline: 3px solid #6c5ce7; outline-offset: 1px; font-weight: bold; }
-    .cal-cell .dot { position: absolute; bottom: 3px; width: 6px; height: 6px; border-radius: 50%; }
-    .dot.crisis { background: #d63031; }
-    .dot.obs { background: #6c5ce7; }
-    .cal-cell.period .dot.obs { background: #fff; }
+    .cal-cell.period, .sq.lg-period { background: #e53935; color: #fff; border-color: #e53935; font-weight: bold; }
+    .cal-cell.predicted, .sq.lg-predicted { background: #fff; color: #e53935; border: 2px dashed #e53935; font-weight: bold; }
+    .cal-cell.red, .sq.lg-red { background: #8e24aa; color: #fff; border-color: #8e24aa; }
+    .cal-cell.caution, .sq.lg-caution { background: #ffcc80; color: #4e2a00; border-color: #fb8c00; }
+    .cal-cell.great, .sq.lg-great { background: #43a047; color: #fff; border-color: #43a047; }
+    .cal-cell.today { outline: 3px solid #1e88e5; outline-offset: 1px; font-weight: bold; }
+    .cal-cell .dot { position: absolute; bottom: 2px; width: 5px; height: 5px; border-radius: 50%; }
+    .dot.crisis { background: #c0392b; box-shadow: 0 0 0 1px #fff; }
+    .dot.obs { background: #6c5ce7; box-shadow: 0 0 0 1px #fff; }
     .cal-legend { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 0.75rem; color: var(--subtext); margin-top: 10px; }
-    .cal-legend .sq { display: inline-block; width: 11px; height: 11px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; }
+    .cal-legend .sq { display: inline-block; width: 11px; height: 11px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; border: 1px solid transparent; box-sizing: border-box; }
     .weekly-card { border: 2px solid #6c5ce7; }
     .w-zoom { display: flex; gap: 6px; margin-bottom: 8px; }
     .w-zoom button { width: auto; margin: 0; padding: 5px 12px; border-radius: 14px; font-size: 0.8rem; cursor: pointer; }
@@ -519,7 +521,9 @@
 
   <!-- CALENDRIER DU MOIS -->
   <div class="card" id="cardCalendar">
-    <h2>🗓️ Calendrier</h2>
+    <details class="events-dropdown journal-dropdown" id="calendarDropdown">
+    <summary>🗓️ Calendrier</summary>
+    <div class="cal-wrap">
     <div class="cal-nav">
       <button class="btn-icon" onclick="moveCalendar(-1)" title="Mois précédent">◀</button>
       <strong id="calTitle"></strong>
@@ -527,13 +531,17 @@
     </div>
     <div class="cal-grid" id="calGrid"></div>
     <div class="cal-legend">
-      <span><i class="sq" style="background:#ff7675;"></i>Règles</span>
-      <span><i class="sq" style="background:rgba(255,118,117,0.25); border:1px dashed #ff7675;"></i>Règles prévues</span>
-      <span><i class="sq" style="background:rgba(230,126,34,0.4);"></i>Zone sensible</span>
-      <span><b style="color:#d63031;">●</b> Crise</span>
+      <span><i class="sq lg-period"></i>Règles</span>
+      <span><i class="sq lg-predicted"></i>Règles prévues</span>
+      <span><i class="sq lg-red"></i>Zone rouge</span>
+      <span><i class="sq lg-caution"></i>Prudence</span>
+      <span><i class="sq lg-great"></i>Super journée</span>
+      <span><b style="color:#c0392b;">●</b> Crise</span>
       <span><b style="color:#6c5ce7;">●</b> Observation</span>
     </div>
-    <p class="scene-caption">Touche un jour pour voir son observation ou en écrire une. Les mois suivants sont prévus d'après tes derniers cycles (le plus récent compte double) et se recalculent à chaque « Début des règles » coché.</p>
+    </div>
+    <p class="scene-caption">Touche un jour pour voir son observation ou en écrire une. Chaque jour reçoit une humeur prévue (sur 5) : celle du guide du jour, recalée sur la durée du cycle (la 2e moitié du cycle dure environ 14 jours), puis mélangée à moitié avec l'humeur réellement notée ces jours-là dans les cycles passés. Zone rouge : humeur prévue ≤ 1,6 ou au moins 2 crises notées ces jours-là. Prudence : ≤ 2,4 ou fenêtre de crise apprise de tes notes. Super journée : ≥ 4,6. Les mois suivants suivent tes derniers cycles (le plus récent compte double).</p>
+    </details>
   </div>
 
   <!-- 3. PLANIFICATEUR DE VACANCES & ÉVÉNEMENTS -->
@@ -2496,7 +2504,57 @@
     line.style.display = 'block';
   }
 
-  // Statut de chaque jour d'une période : règles, règles prévues, zone sensible, crise, observation
+  // Jour du guide (J1…J28) correspondant au jour `day` d'un cycle de `len` jours :
+  // la 2e moitié du cycle (phase lutéale) dure environ 14 jours quelle que soit la durée totale,
+  // on cale donc la fin du cycle sur J28 du guide et le début sur J1.
+  function guideDayFor(day, len) {
+    if (!len || len === 28) return Math.min(Math.max(day, 1), 28);
+    if (day > len - 14) return Math.min(28, Math.max(15, 28 - (len - day)));
+    return Math.min(Math.max(day, 1), 14);
+  }
+
+  // Humeur notée et crises par jour du guide, sur tous les cycles passés
+  function personalDayStats() {
+    const stats = {};
+    const starts = periodStartsHistory();
+    datedLogs().forEach(l => {
+      // jour du cycle de la note et durée de son cycle (si on la connaît)
+      const before = starts.filter(x => x <= l.logDateIso);
+      if (!before.length) return;
+      const st = before[before.length - 1];
+      const nx = starts.find(x => x > st);
+      const day = daysBetween(st, l.logDateIso) + 1;
+      const len = nx ? daysBetween(st, nx) : getCycleLength();
+      if (day > 45) return;
+      const g = guideDayFor(day, len);
+      const s = stats[g] = stats[g] || { moods: [], crises: 0 };
+      if (l.moodVal) s.moods.push(l.moodVal);
+      if (l.isCrisis) s.crises++;
+    });
+    return stats;
+  }
+
+  // Humeur prévue (sur 5) et niveau du jour : 'red' (zone rouge), 'caution' (prudence), 'great' (super) ou null
+  function dayMoodForecast(day, len, stats, crit) {
+    const g = guideDayFor(day, len);
+    let score = guideFor(g).score;
+    const moods = [];
+    let crises = 0;
+    [g - 1, g, g + 1].forEach(x => { const s = stats[x]; if (s) { moods.push(...s.moods); crises += s.crises; } });
+    if (moods.length >= 2) score = 0.5 * score + 0.5 * (moods.reduce((a, b) => a + b, 0) / moods.length);
+    let level = null;
+    if (score <= 1.6 || crises >= 2) level = 'red';
+    else if (score <= 2.4) level = 'caution';
+    else if (score >= 4.6) level = 'great';
+    // fenêtre de crise apprise de tes notes (la même que le bandeau d'alerte du guide)
+    if (crit) {
+      const since = ((day - crit) % len + len) % len;
+      if (since <= 4 && (level === null || level === 'great')) level = 'caution';
+    }
+    return { score, level };
+  }
+
+  // Statut de chaque jour d'une période : règles, règles prévues, niveau d'humeur prévue, crise, observation
   function dayStatusMap(fromIso, toIso) {
     const map = {};
     const get = iso => (map[iso] = map[iso] || {});
@@ -2529,16 +2587,20 @@
           if (d >= fromIso && d <= toIso && !(map[d] && map[d].period)) get(d).predicted = true;
         }
       });
-      // zone sensible : 3 jours avant le jour critique jusqu'à 4 jours après, dans chaque cycle (connu ou prévu)
+      // humeur prévue de chaque jour, dans chaque cycle (connu ou prévu)
       const crit = getCriticalCrisisDayFromLogs();
+      const stats = personalDayStats();
       for (let d = (fromIso > starts[0] ? fromIso : starts[0]); d <= toIso; d = addDays(d, 1)) {
         const idx = anchors.filter(a => a <= d).length - 1;
         if (idx < 0) continue;
         const a = anchors[idx];
         const len = anchors[idx + 1] ? daysBetween(a, anchors[idx + 1]) : L;
         const day = daysBetween(a, d) + 1;
-        const since = ((day - crit) % len + len) % len;
-        if (since <= 4 || since >= len - 3) get(d).sensitive = true;
+        const fc = dayMoodForecast(day, len, stats, crit);
+        const st = get(d);
+        st.level = fc.level;
+        st.score = fc.score;
+        st.cycleDay = day;
       }
     }
     return map;
@@ -2562,10 +2624,12 @@
       const cls = ['cal-cell'];
       if (s.period) cls.push('period');
       else if (s.predicted) cls.push('predicted');
-      else if (s.sensitive) cls.push('sensitive');
+      else if (s.level) cls.push(s.level);
       if (iso === todayIso()) cls.push('today');
       const dot = s.crisis ? '<i class="dot crisis"></i>' : (s.obs ? '<i class="dot obs"></i>' : '');
-      html += `<button class="${cls.join(' ')}" onclick="openCalendarDay('${iso}')" title="${esc(fmtDate(iso))}"><span>${n}</span>${dot}</button>`;
+      const label = s.period ? 'Règles' : s.predicted ? 'Règles prévues' : ({ red: 'Zone rouge', caution: 'Prudence', great: 'Super journée' }[s.level] || '');
+      const tip = `${fmtDate(iso)}${s.cycleDay ? ` · J${s.cycleDay}` : ''}${label ? ` · ${label}` : ''}${s.score ? ` · humeur prévue ${s.score.toFixed(1)}/5` : ''}`;
+      html += `<button class="${cls.join(' ')}" onclick="openCalendarDay('${iso}')" title="${esc(tip)}"><span>${n}</span>${dot}</button>`;
     }
     box.innerHTML = html;
   }
