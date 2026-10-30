@@ -511,7 +511,10 @@
     <div class="chart-container">
       <canvas id="forecastChart"></canvas>
     </div>
-    <div id="forecastList" style="margin-top: 15px;"></div>
+    <details class="events-dropdown" style="margin-top:12px;">
+      <summary>📋 Détail des 5 prochains jours</summary>
+      <div id="forecastList" style="margin-top:8px;"></div>
+    </details>
   </div>
 
   <!-- CALENDRIER DU MOIS -->
@@ -530,7 +533,7 @@
       <span><b style="color:#d63031;">●</b> Crise</span>
       <span><b style="color:#6c5ce7;">●</b> Observation</span>
     </div>
-    <p class="scene-caption">Touche un jour pour voir son observation ou en écrire une.</p>
+    <p class="scene-caption">Touche un jour pour voir son observation ou en écrire une. Les mois suivants sont prévus d'après tes derniers cycles (le plus récent compte double) et se recalculent à chaque « Début des règles » coché.</p>
   </div>
 
   <!-- 3. PLANIFICATEUR DE VACANCES & ÉVÉNEMENTS -->
@@ -554,8 +557,10 @@
 
   <!-- BILAN DU DERNIER CYCLE -->
   <div class="card" id="cardCycleSummary">
-    <h2>📋 Bilan du dernier cycle <span id="cycleSummaryBadge"></span></h2>
-    <div id="cycleSummary"></div>
+    <details class="events-dropdown journal-dropdown" id="cycleSummaryDropdown">
+      <summary>📋 Bilan du dernier cycle <span id="cycleSummaryBadge"></span></summary>
+      <div id="cycleSummary" style="margin-top:10px;"></div>
+    </details>
   </div>
 
   <!-- 6. JOURNAL D'OBSERVATION ET CASES DÉBUT/FIN DES RÈGLES -->
@@ -638,7 +643,8 @@
 
   <!-- 8. OUTIL D'ANALYSE COMPORTEMENTALE, DES CRISES ET TABLEAU DES CYCLES -->
   <div class="card">
-    <h2>🔍 Outil d'Analyse & Bilan des Cycles</h2>
+    <details class="events-dropdown journal-dropdown" id="analysisDropdown">
+    <summary>🔍 Outil d'Analyse & Bilan des Cycles</summary>
     <p style="font-size:0.8rem; color:var(--subtext); margin-top:0;">
       Statistiques automatiques basées sur vos notes et l'historique des cycles enregistrés.
     </p>
@@ -689,6 +695,7 @@
     </div>
 
     <button class="btn-primary" onclick="generateHealthReport()" style="background:#00b894; margin-top:15px;">📄 Imprimer le Bilan Complet (PDF)</button>
+    </details>
   </div>
 
   <!-- 10. SORTIES : deux listes déroulantes (enfants / adultes), fermées par défaut -->
@@ -771,13 +778,6 @@
 <!-- ===================== PAGE 2 : SUIVI DU POIDS ===================== -->
 <div id="pageWeight" style="display:none;">
 
-  <!-- Bilan de la semaine passée (le lundi) -->
-  <div id="weeklyWeight" class="card weekly-card" style="display:none;">
-    <h2>📆 Ta semaine passée</h2>
-    <div id="weeklyWeightText"></div>
-    <button class="btn-icon" onclick="dismissWeekly('weeklyWeightSeen','weeklyWeight')" style="margin-top:10px; width:auto;">👍 Vu</button>
-  </div>
-
   <!-- Saisie + mini-graphique à côté -->
   <div class="card">
     <h2>⚖️ Poids du jour</h2>
@@ -830,14 +830,6 @@
     <div class="chart-container" style="height:270px;"><canvas id="wChart"></canvas></div>
     <div id="wCompare" class="advice-box" style="margin-top:10px; font-size:0.88rem;"></div>
     <p class="scene-caption">Points : pesées · trait vert : moyenne sur 7 jours · pointillés gris : chemin prévu jusqu'à l'objectif · pointillés violets : où mène la tendance actuelle · ligne rouge : objectif.</p>
-  </div>
-
-  <!-- Bilan semaine par semaine -->
-  <div class="card">
-    <h2>📊 Semaine par semaine</h2>
-    <div class="chart-container" style="height:180px;"><canvas id="wWeekChart"></canvas></div>
-    <p class="scene-caption">Écart de la moyenne de chaque semaine (lundi → dimanche) avec la semaine précédente : vert = baisse, rouge = hausse.</p>
-    <div id="wWeekTable"></div>
   </div>
 
   <!-- Tour de taille -->
@@ -2059,7 +2051,7 @@
   function renderWeekAndWaist(st) {
     const ws = st.ws || [];
     const weeks = weeklySummary(ws).slice(-12);
-    el('wWeekTable').innerHTML = weeks.length
+    if (el('wWeekTable')) el('wWeekTable').innerHTML = weeks.length
       ? weeks.slice().reverse().map(w => `<div class="w-row">
           <span class="w-date">sem. du ${esc(fmtShortDate(w.monday))}</span>
           <span class="w-kg">${fmtKg(w.avg)}</span>
@@ -2080,7 +2072,7 @@
     if (typeof Chart === 'undefined' || currentPage !== 'weight') return;
     const withChange = weeks.filter(w => w.change !== null);
     if (wWeekInstance) wWeekInstance.destroy();
-    wWeekInstance = new Chart(el('wWeekChart').getContext('2d'), {
+    if (el('wWeekChart')) wWeekInstance = new Chart(el('wWeekChart').getContext('2d'), {
       type: 'bar',
       data: {
         labels: withChange.map(w => fmtShortDate(w.monday)),
@@ -2112,7 +2104,6 @@
     const st = computeWeightStats();
     const goal = st.goal;
     el('wCoach').innerHTML = coachHtml(st);
-    renderWeeklyWeight();
     renderWeightCompare(st);
     el('wGoalTitle').textContent = `${round1(goal.targetKg)} kg le ${fmtDate(goal.targetDate)}`;
     if (!el('wDate').value) el('wDate').value = todayIso();
@@ -2473,7 +2464,7 @@
     const lens = cycleLengthsHistory(starts).slice(-6);
     let mean, spread;
     if (lens.length >= 2) {
-      mean = lens.reduce((a, b) => a + b, 0) / lens.length;
+      mean = (lens.reduce((a, b) => a + b, 0) + lens[lens.length - 1]) / (lens.length + 1); // le dernier cycle compte double
       const sd = Math.sqrt(lens.reduce((a, b) => a + (b - mean) * (b - mean), 0) / lens.length);
       spread = Math.max(1, Math.round(sd));
     } else {
@@ -2499,7 +2490,7 @@
       txt = `⏳ <strong>Retard de ${daysBetween(f.to, today)} jour${daysBetween(f.to, today) > 1 ? 's' : ''}</strong> sur la prévision (attendues au plus tard le ${esc(fmtShortDate(f.to))}). Coche « Début des règles » dans l'observation du jour où elles arrivent.`;
     }
     txt += f.basedOn >= 2
-      ? `<br><span class="scene-caption">D'après les ${f.basedOn} derniers cycles notés (moyenne ${Math.round(f.mean)} jours).</span>`
+      ? `<br><span class="scene-caption">D'après les ${f.basedOn} derniers cycles notés, le plus récent comptant double (≈ ${Math.round(f.mean)} jours).</span>`
       : `<br><span class="scene-caption">Estimation sur la durée de cycle configurée : coche « Début des règles » à chaque cycle pour l'affiner.</span>`;
     line.innerHTML = txt;
     line.style.display = 'block';
@@ -2525,17 +2516,28 @@
       for (let d = st; d <= end; d = addDays(d, 1)) if (d >= fromIso && d <= toIso) get(d).period = true;
     });
     const f = nextPeriodForecast();
-    if (f) {
-      for (let d = f.likely; d <= addDays(f.likely, f.periodLen - 1); d = addDays(d, 1)) {
-        if (d >= fromIso && d <= toIso && !(map[d] && map[d].period)) get(d).predicted = true;
-      }
-    }
-    if (starts.length) {
-      const len = getCycleLength();
+    if (starts.length && f) {
+      const L = Math.max(18, Math.round(f.mean));
+      const today = todayIso();
+      // débuts prévus : le prochain (aujourd'hui en cas de retard), puis tous les L jours
+      let next = today > f.to ? today : f.likely;
+      const predicted = [];
+      while (next <= toIso) { predicted.push(next); next = addDays(next, L); }
+      const anchors = [...starts, ...predicted];
+      predicted.forEach(pStart => {
+        for (let d = pStart; d <= addDays(pStart, f.periodLen - 1); d = addDays(d, 1)) {
+          if (d >= fromIso && d <= toIso && !(map[d] && map[d].period)) get(d).predicted = true;
+        }
+      });
+      // zone sensible : 3 jours avant le jour critique jusqu'à 4 jours après, dans chaque cycle (connu ou prévu)
+      const crit = getCriticalCrisisDayFromLogs();
       for (let d = (fromIso > starts[0] ? fromIso : starts[0]); d <= toIso; d = addDays(d, 1)) {
-        const day = getCycleDayForDate(d);
-        if (!day) continue;
-        const since = daysSinceCrisisStart(day, len);
+        const idx = anchors.filter(a => a <= d).length - 1;
+        if (idx < 0) continue;
+        const a = anchors[idx];
+        const len = anchors[idx + 1] ? daysBetween(a, anchors[idx + 1]) : L;
+        const day = daysBetween(a, d) + 1;
+        const since = ((day - crit) % len + len) % len;
         if (since <= 4 || since >= len - 3) get(d).sensitive = true;
       }
     }
@@ -3165,6 +3167,7 @@
 
   function generateHealthReport() {
     flushPendingSaves();
+    ['analysisDropdown', 'cycleSummaryDropdown'].forEach(id => { if (el(id)) el(id).open = true; });
     window.print();
   }
 
