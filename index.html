@@ -1678,53 +1678,65 @@
   }
 
   /* ---------- Sorties : deux listes déroulantes de manifestations datées (pas d'activités permanentes) ----------
-     Recherchées le 22.10.2026 dans les agendas publics (kidora.ch, agenda-romand.ch, tempslibre.ch,
+     Recherchées le 02.11.2026 dans les agendas publics (kidora.ch, agenda-romand.ch, tempslibre.ch,
      vd.leprogramme.ch, beausobre.ch, offices du tourisme). Chaque liste montre les 2 prochains mois
      (fenêtre glissante) ; les événements passés disparaissent seuls.
      confirmed:false = date annoncée mais pas encore confirmée par l'organisateur. */
-  const EVENTS_UPDATED = '2026-10-22';
+  const EVENTS_UPDATED = '2026-11-02';
   const EVENTS_WINDOW_DAYS = 61; // 2 mois
   const KIDS_EVENTS = [
-    { start: '2026-10-28', title: '🎷 Concert parents-enfants (jazz, gratuit)', place: 'Lausanne, Casino de Montbenon', km: 30, url: 'https://tempslibre.ch/vaud/concerts/454089-concert-parents-enfants-natan-niddam-friends' },
-    { start: '2026-10-31', title: '🎃 Halloween au château : courges à sculpter, contes, cirque (15h-22h)', place: 'Morges, Château', km: 20, url: 'https://kidora.ch/evenements/halloween-au-chateau-de-morges' },
-    { start: '2026-10-31', title: '🎃 Halloween : bricolage 16h, chasse aux bonbons 17h30, soupe à la courge', place: 'Le Pont, Vallée de Joux', km: 15, url: 'https://kidora.ch/evenements/halloween-le-pont-10-31' },
-    { start: '2026-10-31', title: '🎵 « Harpapier » spectacle tout-petits 0-5 ans (10h30 / 16h)', place: 'Gland, Théâtre de Grand-Champ', km: 35, url: 'https://vd.leprogramme.ch/theatre/harpapier-cie-frakt/gland/theatre-de-grand-champ//spectacle-enfants/' },
-    { start: '2026-10-31', title: "👻 Conte d'Halloween tendre et malicieux", place: 'Prangins, Château', km: 35, url: 'https://agenda-romand.ch/events/halloween-au-chateau-de-prangins-2026/' },
-    { start: '2026-11-01', title: '📖 « Tartine de conte » : histoires au petit-déjeuner', place: 'Crassier, Atelier de Mlle F', km: 45, url: 'https://tempslibre.ch/vaud/juniors/454040-tartine-de-conte' },
-    { start: '2026-11-20', end: '2026-12-31', title: '🎄 Bô Noël : marchés de Noël en ville (fermé le 25)', place: 'Lausanne, centre', km: 30, url: 'https://www.lausanne-tourisme.ch/en/event/bo-noel-lausanne-marches-de-noel/' },
-    { start: '2026-11-20', end: '2026-12-24', title: '🎅 Montreux Noël : le Père Noël vole au-dessus des quais (17h, 18h, 19h)', place: 'Montreux, quais', km: 55, url: 'https://kidora.ch/guide/marches-de-noel-suisse-romande' },
-    { start: '2026-11-20', end: '2026-12-24', title: '🚂 Maison du Père Noël, en train à crémaillère', place: 'Montreux, Rochers-de-Naye', km: 55, url: 'https://agenda-romand.ch/marches-de-noel-vaud/' },
+    { start: '2026-11-04', title: '🎶 « 1, 2, 3 musique ! » éveil musical 0-4 ans (9h45 / 10h30, gratuit, sur inscription)', place: 'Renens, Bibliothèque du Léman', km: 25, url: 'https://kidora.ch/evenements/1-2-3-musique-renens-11-04' },
+    { start: '2026-11-20', end: '2026-12-31', title: '🎄 Bô Noël : dernière édition, marchés et village des enfants (fermé le 25)', place: 'Lausanne, centre', km: 30, url: 'https://www.lausanne-tourisme.ch/en/event/bo-noel-lausanne-marches-de-noel/' },
+    { start: '2026-11-20', end: '2026-12-24', title: '🎅 Montreux Noël : le Père Noël vole au-dessus des quais (en semaine 17h, 18h, 19h)', place: 'Montreux, quais', km: 55, url: 'https://kidora.ch/evenements/montreux-noel' },
+    { start: '2026-11-21', title: '🎄 Marché de Ballaigues : animations pour enfants', place: 'Ballaigues', km: 30, url: 'https://agenda-romand.ch/marches-de-noel-vaud/' },
+    { start: '2026-11-21', end: '2026-11-22', title: '🦌 Marché de Rudolphe : atelier pour enfants', place: 'Etagnières', km: 22, url: 'https://agenda-romand.ch/marches-de-noel-vaud/' },
     { start: '2026-11-22', title: '⛵ « Un bateau » : marionnettes et musique dès 3 ans (11h, complet : liste d\'attente)', place: 'Morges, Théâtre de Beausobre', km: 20, url: 'https://beausobre.ch/spectacles/un-bateau/' },
     { start: '2026-11-28', title: "🕯️ Atelier en famille : couronne de l'Avent", place: 'Prangins, Château (Musée national)', km: 35, url: 'https://www.tempslibre.ch/vaud/juniors-spectacles' },
-    { start: '2026-11-28', title: '🎄 Marché de Noël de Bière', place: 'Bière', km: 10, url: 'https://agenda-romand.ch/marches-de-noel-vaud/', confirmed: false },
-    { start: '2026-11-28', end: '2026-12-13', title: "🏰 Noël médiéval au château (3 week-ends de l'Avent)", place: 'Veytaux, Château de Chillon', km: 60, url: 'https://agenda-romand.ch/marches-de-noel-vaud/' },
-    { start: '2026-11-28', end: '2026-12-23', title: "🎄 Marché de Noël d'Yverdon", place: 'Yverdon-les-Bains', km: 35, url: 'https://agenda-romand.ch/marches-de-noel-vaud/', confirmed: false },
-    { start: '2026-11-29', title: '🎅 Foire de Noël : crèche vivante, contes, Père Noël (9h-17h)', place: 'Orbe, vieille ville', km: 25, url: 'https://kidora.ch/guide/marches-de-noel-suisse-romande' },
+    { start: '2026-11-28', title: '🎄 Marché de Noël de Bière', place: 'Bière', km: 10, url: 'https://agenda-romand.ch/marches-de-noel-vaud/' },
+    { start: '2026-11-28', title: '🧚 Marché de Noël de l\'École Steiner : ateliers enfants, contes, spectacles', place: 'Crissier', km: 22, url: 'https://agenda-romand.ch/marches-de-noel-vaud/' },
+    { start: '2026-11-28', end: '2026-12-13', title: "🏰 Noël médiéval : animaux de la ferme, ateliers en famille (3 week-ends de l'Avent, 10h-17h)", place: 'Veytaux, Château de Chillon', km: 60, url: 'https://kidora.ch/guide/marches-de-noel-suisse-romande' },
+    { start: '2026-11-28', end: '2026-12-23', title: "🎄 Marché de Noël d'Yverdon", place: 'Yverdon-les-Bains, château et place Pestalozzi', km: 35, url: 'https://www.j3l.ch/en/P12925/things-to-do/events/market/christmas-market-in-yverdon-les-bains' },
+    { start: '2026-11-29', title: '🎅 Foire de Noël : crèche vivante, contes, Père Noël (9h-17h)', place: 'Orbe, vieille ville', km: 25, url: 'https://kidora.ch/evenements/marche-de-noel-d-orbe', confirmed: false },
     { start: '2026-12-02', end: '2026-12-20', title: '🎄 Marché de Noël au château', place: 'Morges, Château', km: 20, url: 'https://www.morges-tourisme.ch/en/events/christmas-market-in-the-castle-of-morges/' },
+    { start: '2026-12-04', end: '2026-12-06', title: '🧞 « Aladdin et la Lampe merveilleuse » conseillé dès 4 ans (2h, sam. 13h30 / 17h30, dim. 11h / 15h)', place: 'Lausanne, Théâtre de Beaulieu', km: 30, url: 'https://beaulieu-lausanne.com/agenda/aladdin-et-la-lampe-merveilleuse/' },
+    { start: '2026-12-04', end: '2026-12-06', title: '🎅 Marché de Noël au château : Père Noël, atelier floral enfants', place: 'Coppet, Château', km: 55, url: 'https://agenda-romand.ch/marches-de-noel-vaud/', confirmed: false },
+    { start: '2026-12-05', title: '🎅 Marché artisanal de Noël : Père Noël, animations enfants', place: 'Penthalaz', km: 12, url: 'https://agenda-romand.ch/marches-de-noel-vaud/', confirmed: false },
     { start: '2026-12-09', end: '2026-12-13', title: '🎅 Le Sentier de Noël : ateliers, contes, visite du Père Noël', place: 'Le Sentier, Vallée de Joux', km: 20, url: 'https://www.j3l.ch/en/P106252/things-to-do/events/market/le-sentier-de-noel' },
-    { start: '2026-12-13', title: '🧝 Marché de Noël du Bourg : Père Noël et lutins', place: 'Lutry', km: 40, url: 'https://agenda-romand.ch/marches-de-noel-vaud/' },
+    { start: '2026-12-10', end: '2026-12-13', title: '🎄 Village de Noël de Rive : animations pour enfants', place: 'Nyon, Rive', km: 38, url: 'https://agenda-romand.ch/marches-de-noel-vaud/' },
+    { start: '2026-12-12', title: '🎅 Marché de Noël : passage du Père Noël (10h)', place: 'Les Cullayes', km: 40, url: 'https://agenda-romand.ch/marches-de-noel-vaud/' },
+    { start: '2026-12-13', title: '🧝 Marché de Noël du Bourg : Père Noël et lutins', place: 'Lutry', km: 40, url: 'https://agenda-romand.ch/marches-de-noel-vaud/', confirmed: false },
+    { start: '2026-12-16', title: '🎅 Le Père Noël à la patinoire (dès 14h, gratuit)', place: 'Morges, Patinoire des Eaux-Minérales', km: 20, url: 'https://kidora.ch/guide/noel-en-famille-suisse-romande' },
     { start: '2026-12-16', end: '2026-12-24', title: '⛸️ Noël Nordique : patinoire et aurores boréales', place: 'Vevey, Jardin du Rivage', km: 50, url: 'https://kidora.ch/guide/marches-de-noel-suisse-romande' },
-    { start: '2026-12-19', title: "🎅 Aubon'Noël : village de Noël et arrivée du Père Noël", place: 'Aubonne, Château', km: 15, url: 'https://agenda-romand.ch/marches-de-noel-vaud/', confirmed: false },
-    { start: '2027-01-16', end: '2027-01-24', title: "🎭 « Toi M'aimes ! » spectacle dès 2 ans", place: 'Lausanne, Le Petit Théâtre', km: 30, url: 'https://lepetittheatre.ch/' }
+    { start: '2026-12-19', title: "🎅 Aubon'Noël : carrousel (9h-13h), Le Grinch gratuit (14h15), ateliers au château (dès 16h), Père Noël vers 18h", place: 'Aubonne', km: 15, url: 'https://www.morges-tourisme.ch/en/P207686', confirmed: false },
+    { start: '2027-01-12', end: '2027-01-15', title: '💙 Atelier « Entre bleu et lumière » 0-3 ans (40 min, 9h, 11h, 15h, complet pour l\'instant)', place: 'Lausanne, Le Petit Théâtre', km: 30, url: 'https://lepetittheatre.ch/spectacle/ateliers-du-1er-helena-petersen/' },
+    { start: '2027-01-16', end: '2027-01-24', title: "🎭 « Toi M'aimes ! » cirque et chant dès 2 ans (35 min, complet pour l'instant)", place: 'Lausanne, Le Petit Théâtre', km: 30, url: 'https://lepetittheatre.ch/spectacle/toi-maimes/' }
   ];
   const ADULT_EVENTS = [
-    { start: '2026-10-24', title: '🗝️ « La nuit des dernières clés » au château', place: 'La Sarraz, Château', km: 8, url: 'https://tempslibre.ch/vaud/manifestations/454268-la-nuit-des-derni-res-cl-s-au-ch-teau-de-la-sarraz' },
-    { start: '2026-10-24', title: '🎺 Le Kiosque à Musiques : 30 ans des Rencontres Musicales (gratuit)', place: 'Le Sentier, Temple', km: 20, url: 'https://tempslibre.ch/vaud/manifestations/454402-les-rencontres-musicales-accueillent-le-kiosque-musiques' },
-    { start: '2026-10-29', title: '🎭 « L\'expérience théâtrale » (comédie, 20h)', place: 'Morges, Théâtre de Beausobre', km: 20, url: 'https://beausobre.ch/spectacles/lexperience-theatrale/' },
-    { start: '2026-10-31', title: '🎸 Asaf Avidan en concert (19h)', place: 'Morges, Théâtre de Beausobre', km: 20, url: 'https://beausobre.ch/spectacles/asaf-avidan-2/' },
     { start: '2026-11-04', title: '🍷 Soirée Truffe & La Spinetta (dégustation)', place: 'Tolochenaz, Cave de La Côte', km: 20, url: 'https://cavedelacote.ch/agenda' },
-    { start: '2026-11-07', end: '2026-11-08', title: '🍇 Caves ouvertes « À la découverte du bourru » (navettes gratuites depuis Gland)', place: 'Begnins, Luins, Vinzel, Bursins', km: 30, url: 'https://cave-du-fort.ch/agenda' },
-    { start: '2026-11-11', end: '2026-11-19', title: '😂 Montreux Comedy Festival', place: 'Lausanne (Beaulieu) et Montreux', km: 30, url: 'https://lausanne.evous.ch/salons/novembre' },
+    { start: '2026-11-06', title: '🎭 « Le Bourgeois gentilhomme » (20h)', place: 'Morges, Théâtre de Beausobre', km: 20, url: 'https://beausobre.ch/spectacles/le-bourgeois-gentilhomme/' },
+    { start: '2026-11-07', title: '🎹 Le Grand Récital : Grigory Sokolov', place: 'Lausanne, Salle Métropole', km: 30, url: 'https://www.lausanne-tourisme.ch/en/event/le-grand-recital-grigory-sokolov/' },
+    { start: '2026-11-07', end: '2026-11-08', title: '🍇 Caves ouvertes « À la découverte du bourru » (sam. 10h-18h, dim. 10h-16h, navettes gratuites depuis Gland)', place: 'Begnins, Luins, Vinzel, Bursins', km: 30, url: 'https://cave-du-fort.ch/agenda' },
+    { start: '2026-11-11', end: '2026-11-22', title: '😂 Montreux Comedy Festival', place: 'Lausanne (Beaulieu) et Montreux', km: 30, url: 'https://www.lausanne-tourisme.ch/en/event/montreux-comedy-festival/' },
     { start: '2026-11-12', title: '😂 Blaise Bersinger « Tchoutchou.mp3 » (humour, 20h)', place: 'Morges, Théâtre de Beausobre', km: 20, url: 'https://beausobre.ch/spectacles/blaise-bersinger/' },
     { start: '2026-11-18', title: '🍄 Atelier truffe et vins (16h, CHF 75)', place: 'Mont-sur-Rolle, Maison des Vins de La Côte', km: 30, url: 'https://maisondesvins.ch/en/home/' },
     { start: '2026-11-21', title: '🎤 Solann « Si on sombre » (concert, 19h)', place: 'Morges, Théâtre de Beausobre', km: 20, url: 'https://beausobre.ch/spectacles/solann/' },
     { start: '2026-11-27', end: '2026-11-29', title: '🎭 « La Veuve » (comédie, théâtre d\'objets)', place: 'Morges, Théâtre de Beausobre', km: 20, url: 'https://beausobre.ch/spectacles/la-veuve/' },
-    { start: '2026-12-02', end: '2026-12-20', title: '🍷 Marché de Noël au château : vin chaud et artisans', place: 'Morges, Château', km: 20, url: 'https://www.morges-tourisme.ch/en/events/christmas-market-in-the-castle-of-morges/' },
-    { start: '2026-12-04', end: '2026-12-06', title: '🎨 Les Urbaines : festival d\'art et de musique (gratuit)', place: 'Lausanne, Renens, Chavannes', km: 30, url: 'https://lausanne-tourisme.ch/en/event/les-urbaines' },
+    { start: '2026-11-28', end: '2026-11-29', title: "🎨 Baz'Art de Noël (35e édition)", place: 'Aubonne', km: 15, url: 'https://agenda-romand.ch/marches-de-noel-vaud/' },
+    { start: '2026-12-02', end: '2026-12-20', title: '🍷 Marché de Noël au château : artisans et cantine (plus de 100 chalets)', place: 'Morges, Château', km: 20, url: 'https://www.morges-tourisme.ch/en/events/christmas-market-in-the-castle-of-morges/' },
+    { start: '2026-12-04', end: '2026-12-06', title: '🎨 Les Urbaines : 30e édition, art et musique (gratuit)', place: 'Lausanne, Renens, Chavannes', km: 30, url: 'https://www.radiolac.ch/?p=408119', confirmed: false },
     { start: '2026-12-05', title: '😂 Philippe Caverivière (humour, 19h)', place: 'Morges, Théâtre de Beausobre', km: 20, url: 'https://beausobre.ch/spectacles/philippe-caveriviere/' },
     { start: '2026-12-09', end: '2026-12-13', title: '🫕 Le Sentier de Noël : 30 chalets, cantine fondue', place: 'Le Sentier, Vallée de Joux', km: 20, url: 'https://www.j3l.ch/en/P106252/things-to-do/events/market/le-sentier-de-noel' },
+    { start: '2026-12-10', title: '🎸 Dire Straits Reload (concert)', place: 'Lausanne, Théâtre de Beaulieu', km: 30, url: 'https://beaulieu-lausanne.com/agenda/dire-straits-reload/' },
     { start: '2026-12-17', title: '🎸 Lynda Lemay et Jean-Félix Lalanne (20h)', place: 'Morges, Théâtre de Beausobre', km: 20, url: 'https://beausobre.ch/spectacles/lynda-lemay-et-jean-felix-lalanne/' },
-    { start: '2026-12-21', title: '🎭 Un soir avec Pierre Arditi (20h)', place: 'Morges, Théâtre de Beausobre', km: 20, url: 'https://beausobre.ch/spectacles/un-soir-avec-pierre-arditi/' }
+    { start: '2026-12-18', end: '2026-12-23', title: '🩰 Béjart Ballet Lausanne : Lux Aeterna, Mozart Tangos', place: 'Lausanne, Théâtre de Beaulieu', km: 30, url: 'https://beaulieu-lausanne.com/agenda/bejart-ballet-lausanne-lux-aeterna-mozart-tangos/' },
+    { start: '2026-12-21', title: '🎭 Un soir avec Pierre Arditi (20h)', place: 'Morges, Théâtre de Beausobre', km: 20, url: 'https://beausobre.ch/spectacles/un-soir-avec-pierre-arditi/' },
+    { start: '2026-12-31', title: '🥂 Gala du Nouvel An : Marie-Thérèse Porchet (cabaret, 20h45)', place: 'Lausanne, Salle Métropole', km: 30, url: 'https://www.lausanne-tourisme.ch/en/event/new-years-gala-marie-therese-porchet/' },
+    { start: '2027-01-13', title: '🎭 « La folle journée ou le mariage de Figaro » (20h)', place: 'Morges, Théâtre de Beausobre', km: 20, url: 'https://beausobre.ch/spectacles/la-folle-journee-ou-le-mariage-de-figaro/' },
+    { start: '2027-01-14', title: '😂 Thomas Wiesel « Société écrans » (humour, 20h)', place: 'Morges, Théâtre de Beausobre', km: 20, url: 'https://beausobre.ch/spectacles/thomas-wiesel/' },
+    { start: '2027-01-14', title: "🎻 Concert de l'An de l'Orchestre de la Suisse Romande", place: 'Lausanne, Théâtre de Beaulieu', km: 30, url: 'https://beaulieu-lausanne.com/agenda/orchestre-de-la-suisse-romande-concert-de-lan-2/' },
+    { start: '2027-01-15', end: '2027-01-16', title: '😂 David Castello-Lopes « Délicieux » (humour)', place: 'Lausanne, Théâtre de Beaulieu', km: 30, url: 'https://beaulieu-lausanne.com/agenda/david-castello-lopes-delicieux/' },
+    { start: '2027-01-17', title: '🎸 « The Dark Side of the Moon » en concert (20h)', place: 'Lausanne, Salle Métropole', km: 30, url: 'https://www.myswitzerland.com/en-ca/experiences/events/pink-floyds-the-dark-side-of-the-moon/' },
+    { start: '2027-01-27', end: '2027-01-31', title: '⛸️ Championnats d\'Europe de patinage artistique', place: 'Lausanne, Vaudoise aréna', km: 30, url: 'https://www.lausanne-tourisme.ch/en/event/isu-figure-skating-european-championships-2027/' }
   ];
 
   function fmtShortDate(iso) {
